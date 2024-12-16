@@ -30,7 +30,7 @@ export default function Greeting({ setActivePage }) {
           <Text style={styles.buttonText}>Login with Email</Text>
         </TouchableOpacity>
       </View>
-      <Text>version 1.2</Text>
+      <Text>version 1.4</Text>
     </View>
   );
 }

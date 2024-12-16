@@ -1,8 +1,20 @@
 import React from "react";
-import { View, Text, StyleSheet, Image, FlatList } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  FlatList,
+  TouchableOpacity,
+} from "react-native";
 import { COLORS, FONTS } from "../../../../theme";
+import { useNavigation } from "@react-navigation/native";
+import { useDispatch } from "react-redux";
+import { setActiveSettingsPage } from "../../../redux/slices/activeSettingsPage";
 
 export default function BusinessDriver({ data }) {
+  const navigation = useNavigation();
+  const dispatch = useDispatch();
   const renderItem = ({ item }) => (
     <View style={styles.itemContainer}>
       <Text style={styles.text}>
@@ -10,37 +22,45 @@ export default function BusinessDriver({ data }) {
           source={require("../../../../assets/sperator.png")}
           style={styles.sperator}
         />{" "}
-        {item.serviceName}{" "}
+        {item.Service}{" "}
         <Image
           source={require("../../../../assets/sperator.png")}
           style={styles.sperator}
         />{" "}
-        {item.clientName}
+        {item.Client}
       </Text>
     </View>
   );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.imageWrapper}>
-        <Image
-          source={require("../../../../assets/bussinessDrive.png")}
-          style={styles.image}
-        />
-      </View>
+    <TouchableOpacity
+      style={styles.container}
+      onPress={() => {
+        dispatch(setActiveSettingsPage("BusinessDrivers"));
+        navigation.navigate("Settings");
+      }}
+    >
+      {data && data.length > 0 ? (
+        <>
+          <View style={styles.imageWrapper}>
+            <Image
+              source={require("../../../../assets/bussinessDrive.png")}
+              style={styles.image}
+            />
+          </View>
 
-      {data.businessDrivers && data.businessDrivers.length > 0 ? (
-        <FlatList
-          data={data.businessDrivers}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={renderItem}
-          style={styles.list}
-          ItemSeparatorComponent={() => <View style={{ height: 6 }} />}
-        />
+          <FlatList
+            data={data}
+            keyExtractor={(item) => item._id}
+            renderItem={renderItem}
+            style={styles.list}
+            ItemSeparatorComponent={() => <View style={{ height: 6 }} />}
+          />
+        </>
       ) : (
-        <Text>No data available</Text>
+        <Text style={styles.placeHolder}>Business Drivers</Text>
       )}
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -49,12 +69,19 @@ const styles = StyleSheet.create({
     alignItems: "center", // Center the image in the container
     justifyContent: "center",
   },
+  placeHolder: {
+    margin: "auto",
+    fontSize: FONTS.medium,
+    fontFamily: FONTS.familyBold,
+  },
   container: {
     padding: 20,
     width: "100%",
     borderColor: COLORS.borders,
     borderBottomWidth: 1,
-    marginTop: 20,
+    paddingRight: 50,
+
+    // marginTop: 20,
     flexDirection: "row",
     alignContent: "center",
     justifyContent: "flex-start",
@@ -68,6 +95,7 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     objectFit: "contain",
+    paddingBottom: 8,
   },
 
   text: {

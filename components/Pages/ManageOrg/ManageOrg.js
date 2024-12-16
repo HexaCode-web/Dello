@@ -2,12 +2,56 @@ import { Text, View, StyleSheet } from "react-native";
 import OldNetworks from "./components/OldNetworks";
 import { TouchableOpacity } from "react-native";
 import AntDesign from "@expo/vector-icons/AntDesign";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import CreateNetwork from "./components/CreateNetwork";
 import { COLORS, FONTS } from "../../../theme";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useSelector } from "react-redux";
+import Settings from "./components/Settings";
+import axios from "axios";
 
 export default function ManageOrg() {
+  const User = useSelector((state) => state.auth.user);
+  const associatedEmails = User.user.associatedEmails;
+
+  const [activeOrg, setActiveOrg] = useState(
+    associatedEmails ? associatedEmails[0] : null
+  );
+  const [orgData, setOrgData] = useState(null);
+  const getActiveOrg = async () => {
+    try {
+      const config = {
+        method: "get",
+        url: `${process.env.EXPO_PUBLIC_ORG_API}/${activeOrg.OrgId}`,
+        headers: {
+          "Accept-Language": "en",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${User.Token}`,
+        },
+      };
+      const response = await axios(config);
+
+      // Axios automatically throws errors for non-2xx statuses
+      setOrgData(response.data);
+
+      // Handle the data
+      const data = response.data;
+      // Perform any state updates or further processing here
+    } catch (error) {
+      console.error("Error:", error.response?.status, error.message);
+
+      // Log additional details if available
+      if (error.response) {
+        console.error("Backend Error Response:", error.response.data);
+      }
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      getActiveOrg();
+    }, [activeOrg])
+  );
   const navigation = useNavigation();
   const [activePage, setActivePage] = useState("Home");
   const handleInnerNavigation = () => {
@@ -28,30 +72,62 @@ export default function ManageOrg() {
         />
       </TouchableOpacity>
       <Text style={styles.title}>Manage Organization</Text>
-      <View style={styles.buttonWrapper}>
-        {activePage != "Old" && (
+      {activeOrg && (
+        <Text style={styles.subtitle}>Currently managing: {orgData.name}</Text>
+      )}
+      {activeOrg ? (
+        <View style={styles.buttonWrapper}>
+          {activePage != "Old" && (
+            <TouchableOpacity
+              style={styles.DefaultButton}
+              onPress={() => {
+                setActivePage("Old");
+              }}
+            >
+              <Text style={styles.buttonText}>View Active Networks</Text>
+            </TouchableOpacity>
+          )}
+          {activePage != "Create" && (
+            <TouchableOpacity
+              style={styles.DefaultButton}
+              onPress={() => {
+                setActivePage("Create");
+              }}
+            >
+              <Text style={styles.buttonText}>Create New Network</Text>
+            </TouchableOpacity>
+          )}
+          {/* {activePage != "Settings" && (
           <TouchableOpacity
             style={styles.DefaultButton}
             onPress={() => {
-              setActivePage("Old");
+              setActivePage("Settings");
             }}
           >
-            <Text style={styles.buttonText}>View Active Networks</Text>
+            <Text style={styles.buttonText}>Settings</Text>
           </TouchableOpacity>
-        )}
-        {activePage != "Create" && (
+        )} */}
+        </View>
+      ) : (
+        <>
+          <Text style={styles.subtitle}>No Organizations Found</Text>
           <TouchableOpacity
             style={styles.DefaultButton}
             onPress={() => {
-              setActivePage("Create");
+              navigation.navigate("CreateOrg");
             }}
           >
-            <Text style={styles.buttonText}>Create New Network</Text>
+            <Text style={styles.buttonText}>Create Organization</Text>
           </TouchableOpacity>
-        )}
-      </View>
-      {activePage === "Old" && <OldNetworks />}
-      {activePage === "Create" && <CreateNetwork />}
+        </>
+      )}
+      {activePage === "Old" && <OldNetworks OrgId={activeOrg.OrgId} />}
+      {activePage === "Create" && (
+        <CreateNetwork orgId={activeOrg.OrgId} userId={User.ID} />
+      )}
+      {/* {activePage === "Settings" && (
+        <Settings orgId={activeOrg.OrgId} userId={User.ID} />
+      )} */}
     </View>
   );
 }
@@ -64,6 +140,9 @@ const styles = StyleSheet.create({
     paddingBottom: 50,
     justifyContent: "space-between",
     color: "black",
+  },
+  subtitle: {
+    marginBottom: "auto",
   },
   title: {
     fontSize: FONTS.large,
@@ -81,7 +160,7 @@ const styles = StyleSheet.create({
     width: "100%",
     justifyContent: "center",
     alignItems: "center",
-    height: 150,
+    height: 200,
     borderRadius: 10,
     marginBottom: 10,
     gap: 20,

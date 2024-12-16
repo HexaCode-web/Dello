@@ -20,7 +20,6 @@ import {
 import { FONTS } from "./theme";
 import Network from "./components/Pages/Network/Network";
 import CreateOrg from "./components/Pages/CreateOrg/CreateOrg";
-import SignInOrg from "./components/Pages/signInOrg/SignInOrg";
 import ManageOrg from "./components/Pages/ManageOrg/ManageOrg";
 
 // Prevent the splash screen from auto-hiding
@@ -32,10 +31,11 @@ export default function Home() {
     Montserrat_500Medium,
     Montserrat_700Bold,
   });
+  console.log(User);
 
   // Check if the user is logged in
   const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
-
+  const User = useSelector((state) => state.auth.user);
   // Use useEffect to hide the splash screen when fonts are loaded
   useEffect(() => {
     const hideSplashScreen = async () => {
@@ -74,7 +74,7 @@ export default function Home() {
               tabBarIcon: ({ focused }) => (
                 <Feather
                   name="home"
-                  size={30}
+                  size={25}
                   color={focused ? "tomato" : "gray"}
                 />
               ),
@@ -87,7 +87,7 @@ export default function Home() {
               tabBarIcon: ({ focused }) => (
                 <Feather
                   name="search"
-                  size={30}
+                  size={25}
                   color={focused ? "tomato" : "gray"}
                 />
               ),
@@ -100,7 +100,7 @@ export default function Home() {
               tabBarIcon: ({ focused }) => (
                 <Feather
                   name="user"
-                  size={30}
+                  size={25}
                   color={focused ? "tomato" : "gray"}
                 />
               ),
@@ -109,24 +109,15 @@ export default function Home() {
           <Tab.Screen
             name="CreateOrg"
             component={CreateOrg}
-            options={{
-              tabBarButton: () => null,
-            }}
+            options={{ tabBarItemStyle: { display: "none" } }} // Hide item from tabBar
           />
-          <Tab.Screen
-            name="SignInOrg"
-            component={SignInOrg}
-            options={{
-              tabBarButton: () => null,
-            }}
-          />
+
           <Tab.Screen
             name="ManageOrg"
             component={ManageOrg}
-            options={{
-              tabBarButton: () => null,
-            }}
+            options={{ tabBarItemStyle: { display: "none" } }} // Hide item from tabBar
           />
+
           <Tab.Screen
             name="Settings"
             component={Settings}
@@ -134,7 +125,7 @@ export default function Home() {
               tabBarIcon: ({ focused }) => (
                 <Feather
                   name="settings"
-                  size={30}
+                  size={25}
                   color={focused ? "tomato" : "gray"}
                 />
               ),

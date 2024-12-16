@@ -5,10 +5,10 @@ import HamburgerButton from "../../HomeScreen/components/HamburgerButton";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { COLORS, FONTS } from "../../../../theme";
 import { useDispatch, useSelector } from "react-redux";
+import { logout } from "../../../redux/slices/authSlice";
 
 export default function TopBar({ activePage, setActivePage }) {
   const [showMenu, setShowMenu] = react.useState(false);
-  const isOrgLoggedIn = useSelector((state) => state.auth.isOrgLoggedIn);
 
   const dispatch = useDispatch();
 
@@ -48,22 +48,9 @@ export default function TopBar({ activePage, setActivePage }) {
               setShowMenu(false), navigation.navigate("ManageOrg");
             }}
           >
-            <Text style={styles.buttonTextEmpty}>Manage Origination</Text>
+            <Text style={styles.buttonTextEmpty}>Organizations</Text>
           </TouchableOpacity>
-          {isOrgLoggedIn && (
-            <View style={styles.signUpPromptBtn}>
-              <TouchableOpacity
-                onPress={() => {
-                  setShowMenu(false);
-                  dispatch(logoutOrg());
-                }}
-              >
-                <Text style={styles.buttonTextEmpty}>
-                  Logout from organization
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
+
           <View style={styles.signUpPromptBtn}>
             <TouchableOpacity
               onPress={() => {

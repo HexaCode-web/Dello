@@ -2,7 +2,6 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import AntDesign from "@expo/vector-icons/AntDesign";
-import { ORG_API } from "@env";
 import { useGetLocation } from "../../hooks/getLocation";
 import { COLORS, FONTS } from "../../../theme";
 import Screen0 from "./Screens/Screen0";
@@ -11,16 +10,19 @@ import Screen2 from "./Screens/Screen2";
 import Screen3 from "./Screens/Screen3";
 import Screen4 from "./Screens/Screen4";
 import { useNavigation } from "@react-navigation/native";
+import { useSelector } from "react-redux";
 export default function CreateOrg() {
+  const User = useSelector((state) => state.auth.user);
   const navigation = useNavigation();
+
   const [activeInnerPage, setActiveInnerPage] = useState(0);
   const [location, error] = useGetLocation();
   const [userInfo, setUserInfo] = useState({
     orgEmailId: "",
-    password: "",
     confirmPassword: "",
     orgName: "",
     OTP: "",
+    address: "",
   });
 
   const [errorInForm, setErrorInForm] = useState("");
@@ -29,16 +31,12 @@ export default function CreateOrg() {
       return { ...prev, orgEmailId: value };
     });
   };
-  const onChangePassword = (value) => {
+  const onChangeAddress = (value) => {
     setUserInfo((prev) => {
-      return { ...prev, password: value };
+      return { ...prev, address: value };
     });
   };
-  const onChangeConfirmPassword = (value) => {
-    setUserInfo((prev) => {
-      return { ...prev, confirmPassword: value };
-    });
-  };
+
   const onChangeOTP = (value) => {
     setUserInfo((prev) => {
       return { ...prev, OTP: value };
@@ -53,21 +51,21 @@ export default function CreateOrg() {
   const sendOTP = async () => {
     const config = {
       method: "post",
-      url: `${ORG_API}/organization/register/send-otp`,
+      url: `${process.env.EXPO_PUBLIC_AUTH_API}/send-Otp`,
       headers: {
-        "Accept-Language": "en",
         "Content-Type": "application/json",
       },
       data: {
-        mediumType: "email",
-        emailId: userInfo.orgEmailId,
+        email: userInfo.orgEmailId,
       },
     };
     axios(config)
       .then((response) => {
-        setErrorInForm("OTP sent");
+        setErrorInForm("OTP sent ");
       })
       .catch((error) => {
+        console.log(error);
+
         const errorMessage = error.response
           ? error.response.data.message || "OTP verification failed"
           : error.message;
@@ -79,20 +77,24 @@ export default function CreateOrg() {
     try {
       const config = {
         method: "post",
-        url: `${ORG_API}/organization/register/verify-otp`,
+        url: `${process.env.EXPO_PUBLIC_AUTH_API}/verify-Otp`,
         headers: {
-          "Accept-Language": "en",
           "Content-Type": "application/json",
         },
         data: {
-          emailId: userInfo.orgEmailId,
-          otp: userInfo.OTP,
+          email: userInfo.orgEmailId,
+          sentOTP: userInfo.OTP,
         },
       };
 
       const response = await axios(config);
-      if (response.status == 200) {
-        return { verified: true, userId: response.data.userId };
+
+      // Check for successful OTP verification using the message in the response
+      if (
+        response.status === 200 &&
+        response.data.message === "OTP verified successfully"
+      ) {
+        return true;
       } else {
         setErrorInForm(
           response.data.message || "Unexpected error during OTP verification"
@@ -100,35 +102,40 @@ export default function CreateOrg() {
         return false;
       }
     } catch (error) {
-      setErrorInForm(error.response.data.message);
+      console.log(error);
+
+      const errorMessage = error.response
+        ? error.response.data.message || "OTP verification failed"
+        : error.message;
+
+      setErrorInForm(errorMessage);
       return false;
     }
   };
 
-  const signUp = async (userId) => {
-    console.log(userId);
-
+  const signUp = async () => {
     try {
       const config = {
         method: "post",
-        url: `${ORG_API}/auth/register`,
+        url: `${process.env.EXPO_PUBLIC_ORG_API}/add`,
         headers: {
           "Accept-Language": "en",
           "Content-Type": "application/json",
+          Authorization: `Bearer ${User.Token}`,
         },
         data: {
-          orgEmailId: userInfo.orgEmailId,
-          password: userInfo.password,
-          orgName: userInfo.orgName,
+          email: userInfo.orgEmailId,
+          name: userInfo.orgName,
           latitude: location.coords.latitude,
           longitude: location.coords.longitude,
-          userId: userId,
+          address: userInfo.address,
+          userId: User.user._id,
         },
       };
 
       const response = await axios(config);
 
-      if (response.status === 200) {
+      if (response.status === 201) {
         return true;
       } else {
         setErrorInForm(
@@ -142,9 +149,9 @@ export default function CreateOrg() {
     }
   };
   const finalizeSignUp = async () => {
-    const { verified, userId } = await verifyOTP();
+    const verified = await verifyOTP();
     if (verified) {
-      const SignedUp = await signUp(userId);
+      const SignedUp = await signUp();
       if (SignedUp) {
         setActiveInnerPage(4);
         setErrorInForm("");
@@ -176,6 +183,22 @@ export default function CreateOrg() {
         />
       </TouchableOpacity>
       {activeInnerPage === 0 && (
+        <Screen2
+          userInfo={userInfo}
+          setActiveInnerPage={setActiveInnerPage}
+          onChangeOrgName={onChangeOrgName}
+          setErrorInForm={setErrorInForm}
+        />
+      )}
+      {activeInnerPage === 1 && (
+        <Screen1
+          userInfo={userInfo}
+          setActiveInnerPage={setActiveInnerPage}
+          onChangeAddress={onChangeAddress}
+          setErrorInForm={setErrorInForm}
+        />
+      )}
+      {activeInnerPage === 2 && (
         <Screen0
           onChangeEmailFunction={onChangeEmail}
           userInfo={userInfo}
@@ -184,24 +207,6 @@ export default function CreateOrg() {
         />
       )}
 
-      {activeInnerPage === 1 && (
-        <Screen1
-          userInfo={userInfo}
-          setActiveInnerPage={setActiveInnerPage}
-          onChangePassword={onChangePassword}
-          onChangeConfirmPassword={onChangeConfirmPassword}
-          setErrorInForm={setErrorInForm}
-        />
-      )}
-
-      {activeInnerPage === 2 && (
-        <Screen2
-          userInfo={userInfo}
-          setActiveInnerPage={setActiveInnerPage}
-          onChangeOrgName={onChangeOrgName}
-          setErrorInForm={setErrorInForm}
-        />
-      )}
       {activeInnerPage === 3 &&
         errorInForm != "User is already registered." && (
           <Screen3

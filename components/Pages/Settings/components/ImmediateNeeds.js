@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -11,28 +11,22 @@ import {
   Image,
   Alert,
 } from "react-native";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import { Feather } from "@expo/vector-icons";
+
 import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
 import { COLORS, FONTS } from "../../../../theme";
 import { updateUserData } from "../../../redux/slices/authSlice";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
-const PreviousRoles = ({ setActivePage }) => {
+
+const ImmediateNeeds = () => {
   const User = useSelector((state) => state.auth.user);
   const dispatch = useDispatch();
-  const [position, setPosition] = useState("");
-  const [company, setCompany] = useState("");
-  const [date, setDate] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showDatePickerForEdit, setShowDatePickerForEdit] = useState(false);
-
+  const [immediateNeed, setImmediateNeed] = useState("");
   const [error, setError] = useState();
   const [saved, setSaved] = useState(false); // State to track saved status
   const [isModalVisible, setModalVisible] = useState(false);
   const [activeService, setActiveService] = useState(null);
-
   const hideModal = () => {
     setActiveService(null);
     setModalVisible(false);
@@ -42,36 +36,19 @@ const PreviousRoles = ({ setActivePage }) => {
     setModalVisible(true);
   };
 
-  const onDateChange = (event, selectedDate) => {
-    setShowDatePicker(false);
-    if (selectedDate) {
-      setDate(selectedDate);
-    }
-  };
-  const onDateChangeForEdit = (event, selectedDate) => {
-    setActiveService((prev) => {
-      return { ...prev, Duration: selectedDate };
-    });
-    setShowDatePickerForEdit(false);
-  };
-  const savePresentRoleDetails = async () => {
-    setSaved(false);
-
-    if (position == "" || company == "" || date == "") {
-      setError("All fields are required");
+  const saveImmediateNeedDetails = async () => {
+    setSaved(false); // Reset saved status before saving
+    if (immediateNeed == "") {
+      setError("immediate Need is required");
       return;
     }
     setError("");
 
     try {
       const response = await axios.post(
-        `${process.env.EXPO_PUBLIC_PROFILE_API}/previousRole/add/${User.ID}`,
+        `${process.env.EXPO_PUBLIC_PROFILE_API}/ImmediateNeed/add/${User.ID}`,
         {
-          PreviousRole: {
-            Position: position,
-            Company: company,
-            Duration: date.toISOString().split("T")[0],
-          },
+          ImmediateNeed: { ImmediateNeed: immediateNeed },
         },
         {
           headers: {
@@ -82,11 +59,11 @@ const PreviousRoles = ({ setActivePage }) => {
           },
         }
       );
-      if (response.status === 200) {
-        dispatch(updateUserData(response.data));
 
+      if (response.status === 200) {
         Alert.alert("Saved", "Saved");
-        setSaved(true);
+        dispatch(updateUserData(response.data));
+        setSaved(true); // Set saved status after saving
       }
     } catch (error) {
       console.log(error);
@@ -96,7 +73,7 @@ const PreviousRoles = ({ setActivePage }) => {
   const deleteProperty = async (ID) => {
     try {
       const response = await axios.delete(
-        `${process.env.EXPO_PUBLIC_PROFILE_API}/previousRole/delete/${User.user._id}`,
+        `${process.env.EXPO_PUBLIC_PROFILE_API}/ImmediateNeed/delete/${User.user._id}`,
         {
           headers: {
             Accept: "application/json",
@@ -104,7 +81,7 @@ const PreviousRoles = ({ setActivePage }) => {
             "Content-Type": "application/json",
             authorization: `Bearer ${User.Token}`,
           },
-          data: { PreviousRoleId: ID }, // Send the businessDriverId in the body (data field)
+          data: { immediateNeedId: ID }, // Send the businessDriverId in the body (data field)
         }
       );
 
@@ -121,10 +98,10 @@ const PreviousRoles = ({ setActivePage }) => {
   const editProperty = async () => {
     try {
       const response = await axios.put(
-        `${process.env.EXPO_PUBLIC_PROFILE_API}/previousRole/update/${User.user._id}`,
+        `${process.env.EXPO_PUBLIC_PROFILE_API}/ImmediateNeed/update/${User.user._id}`,
         {
-          PreviousRoleId: activeService._id,
-          updatedPreviousRole: activeService,
+          immediateNeedId: activeService._id,
+          updatedImmediateNeed: activeService,
         },
         {
           headers: {
@@ -148,114 +125,48 @@ const PreviousRoles = ({ setActivePage }) => {
       Alert.alert("Error", error.message);
     }
   };
-  function getTimeSince(startDate) {
-    // Get the current date
-    const currentDate = new Date();
-
-    // Convert the startDate to a Date object
-    const start = new Date(startDate);
-
-    // Initialize values for years, months, and days
-    let years = currentDate.getFullYear() - start.getFullYear();
-    let months = currentDate.getMonth() - start.getMonth();
-    let days = currentDate.getDate() - start.getDate();
-
-    // Adjust for negative days
-    if (days < 0) {
-      months--;
-      const previousMonth = new Date(
-        currentDate.getFullYear(),
-        currentDate.getMonth(),
-        0
-      );
-      days += previousMonth.getDate();
-    }
-
-    // Adjust for negative months
-    if (months < 0) {
-      years--;
-      months += 12;
-    }
-
-    // Build the result string
-    let result = "";
-
-    if (years > 0) {
-      result += `${years} Yr${years > 1 ? "s" : ""} `;
-    }
-
-    if (months > 0) {
-      result += `${months} Mth${months > 1 ? "s" : ""} `;
-    }
-
-    return result.trim();
-  }
-  const renderItem = ({ item }) => {
-    const date = new Date(item.Duration);
-
-    const formattedDate = date.toISOString().split("T")[0];
-    return (
-      <View style={styles.itemContainer}>
-        <Text style={styles.text}>
-          <Image
-            source={require("../../../../assets/sperator.png")}
-            style={styles.sperator}
-          />{" "}
-          {item.Position}{" "}
-          <Image
-            source={require("../../../../assets/sperator.png")}
-            style={styles.sperator}
-          />{" "}
-          {item.Company}{" "}
-          <Image
-            source={require("../../../../assets/sperator.png")}
-            style={styles.sperator}
-          />{" "}
-          {formattedDate}{" "}
-          {getTimeSince(item.Duration) != "" ? (
-            <Image
-              source={require("../../../../assets/sperator.png")}
-              style={styles.sperator}
-            />
-          ) : (
-            ""
-          )}{" "}
-          {getTimeSince(item.Duration)}
-        </Text>
-        <TouchableOpacity>
-          <FontAwesome6
-            name="edit"
-            size={24}
-            color={COLORS.primary}
-            style={styles.icon}
-            onPress={() => {
-              showModal(item);
-            }}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity
+  const renderItem = ({ item }) => (
+    <View style={styles.itemContainer}>
+      <Text style={styles.text}>
+        <Image
+          source={require("../../../../assets/sperator.png")}
+          style={styles.sperator}
+        />{" "}
+        {item.ImmediateNeed}
+      </Text>
+      <TouchableOpacity>
+        <FontAwesome6
+          name="edit"
+          size={24}
+          color={COLORS.primary}
+          style={styles.icon}
           onPress={() => {
-            deleteProperty(item._id);
+            showModal(item);
           }}
-        >
-          <Ionicons
-            name="trash-outline"
-            size={24}
-            color={COLORS.primary}
-            style={styles.icon}
-          />
-        </TouchableOpacity>
-      </View>
-    );
-  };
+        />
+      </TouchableOpacity>
+      <TouchableOpacity
+        onPress={() => {
+          deleteProperty(item._id);
+        }}
+      >
+        <Ionicons
+          name="trash-outline"
+          size={24}
+          color={COLORS.primary}
+          style={styles.icon}
+        />
+      </TouchableOpacity>
+    </View>
+  );
 
   return (
     <ScrollView>
-      {User.user.previousRoles.length > 0 && (
+      {User.user.ImmediateNeeds.length > 0 && (
         <View style={styles.container}>
           <Text style={styles.title}>Previously added</Text>
           <FlatList
-            data={User.user.previousRoles}
+            data={User.user.ImmediateNeeds}
             keyExtractor={(item) => item._id}
             renderItem={renderItem}
             style={styles.list}
@@ -265,63 +176,18 @@ const PreviousRoles = ({ setActivePage }) => {
       )}
       <View style={styles.container}>
         <Text style={styles.title}>Add</Text>
-        <Text style={styles.label}>Position</Text>
+        <Text style={styles.label}>immediate Need</Text>
         <TextInput
           style={[styles.input, saved && { color: COLORS.secondary }]}
-          value={position}
-          onChangeText={setPosition}
+          value={immediateNeed}
+          onChangeText={setImmediateNeed}
         />
 
-        <Text style={styles.label}>Company</Text>
-        <TextInput
-          style={[styles.input, saved && { color: COLORS.secondary }]}
-          value={company}
-          onChangeText={setCompany}
-        />
-
-        <Text style={styles.label}>When</Text>
-        <View style={styles.datePickerContainer}>
-          <TextInput
-            style={[styles.input, saved && { color: COLORS.secondary }]}
-            value={date.toDateString()}
-            editable={false}
-          />
-          <TouchableOpacity onPress={() => setShowDatePicker(true)}>
-            <Feather name="calendar" size={24} color="gray" />
-          </TouchableOpacity>
-        </View>
-
-        {showDatePicker && (
-          <DateTimePicker
-            value={date}
-            mode="date"
-            display="default"
-            onChange={onDateChange}
-          />
-        )}
-        {showDatePickerForEdit && (
-          <DateTimePicker
-            value={new Date(activeService.Date)}
-            mode="date"
-            display="default"
-            onChange={onDateChangeForEdit}
-          />
-        )}
         {error && <Text style={styles.Error}>{error}</Text>}
 
         <View style={styles.buttonWrapper}>
           <TouchableOpacity
-            onPress={async () => {
-              await savePresentRoleDetails();
-
-              setActivePage("Education");
-            }}
-            style={styles.DefaultButton}
-          >
-            <Text style={styles.buttonText}>Next</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={savePresentRoleDetails}
+            onPress={saveImmediateNeedDetails}
             style={styles.DefaultButton}
           >
             <Text style={styles.buttonText}>Save</Text>
@@ -336,39 +202,16 @@ const PreviousRoles = ({ setActivePage }) => {
       >
         <View style={styles.modalBackdrop}>
           <View style={styles.container}>
-            <Text style={styles.label}>Position</Text>
+            <Text style={styles.label}>immediate Need</Text>
             <TextInput
               style={[styles.input, saved && { color: COLORS.secondary }]}
-              value={activeService?.Position}
+              value={activeService?.ImmediateNeed}
               onChangeText={(value) => {
                 setActiveService((prev) => {
-                  return { ...prev, Position: value };
+                  return { ...prev, ImmediateNeed: value };
                 });
               }}
             />
-
-            <Text style={styles.label}>Company</Text>
-            <TextInput
-              style={[styles.input, saved && { color: COLORS.secondary }]}
-              value={activeService?.Company}
-              onChangeText={(value) => {
-                setActiveService((prev) => {
-                  return { ...prev, Company: value };
-                });
-              }}
-            />
-
-            <Text style={styles.label}>When</Text>
-            <View style={styles.datePickerContainer}>
-              <TextInput
-                style={[styles.input, saved && { color: COLORS.secondary }]}
-                value={activeService?.Duration}
-                editable={false}
-              />
-              <TouchableOpacity onPress={() => setShowDatePickerForEdit(true)}>
-                <Feather name="calendar" size={24} color="gray" />
-              </TouchableOpacity>
-            </View>
 
             <View style={styles.buttonWrapper}>
               <TouchableOpacity
@@ -520,4 +363,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default PreviousRoles;
+export default ImmediateNeeds;

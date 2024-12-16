@@ -5,20 +5,11 @@ import TopBar from "../../GeneralComponents/TopBar";
 import Header from "./components/Header";
 import Body from "./components/Body";
 export default function HomeScreen() {
-  const isOrgLoggedIn = useSelector((state) => state.auth.isOrgLoggedIn);
-  const tabsAr = isOrgLoggedIn
-    ? [
-        { Name: "Go To Profile", Page: "Profile" },
-        { Name: "Manage Origination", Page: "ManageOrg" },
-      ]
-    : [
-        { Name: "Go To Profile", Page: "Profile" },
-        { Name: "Create Origination", Page: "CreateOrg" },
-        {
-          Name: "Login Origination",
-          Page: "SignInOrg",
-        },
-      ];
+  const tabsAr = [
+    { Name: "Profile", Page: "Profile" },
+    { Name: "Organizations", Page: "ManageOrg" },
+  ];
+
   return (
     <View style={styles.container}>
       <TopBar Tabs={tabsAr} />

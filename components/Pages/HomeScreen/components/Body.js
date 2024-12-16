@@ -13,11 +13,7 @@ import { FONTS } from "../../../../theme";
 const Body = () => {
   const [activeTab, setActiveTab] = useState("Meet");
 
-  const meetingData = [
-    { id: "1", name: "Jane Cooper", role: "HR Manager", time: "17:10" },
-    { id: "2", name: "Esther Howard", role: "HR Manager", time: "18:00" },
-    { id: "3", name: "Wade Warren", role: "HR Manager", time: "" },
-  ];
+  const meetingData = [];
 
   const tabData = [
     { id: "meet", title: "Meet" },
@@ -104,7 +100,7 @@ const styles = StyleSheet.create({
   },
   tab: {
     width: 140,
-    height: 46,
+    height: 40,
     paddingVertical: 12,
     paddingHorizontal: 16,
     alignItems: "center",

@@ -45,19 +45,14 @@ export default function Screen0({
   };
   return (
     <>
-      <View style={styles.textWrapper}>
-        <Text style={styles.Header}>Create an organization</Text>
-        <Text style={styles.signUpPromptText}>
-          enter your organization Email
-        </Text>
-      </View>
+      <View style={styles.textWrapper}></View>
       <View style={styles.inputsWrapper}>
         <View style={styles.inputWrapper}>
-          <Text style={styles.signUpPromptText}> Organization Email:</Text>
           <TextInput
             style={styles.input}
             onChangeText={(value) => handleEmailChange(value)}
             value={userInfo.orgEmailId}
+            placeholder="Organization Email"
           />
         </View>
       </View>
@@ -65,7 +60,7 @@ export default function Screen0({
         <TouchableOpacity
           onPress={() => {
             if (isValidEmail && userInfo.orgEmailId != "") {
-              setActiveInnerPage(1);
+              setActiveInnerPage(3);
               setErrorInForm("");
             } else {
               setErrorInForm("must be a professional email address");

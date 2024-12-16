@@ -11,7 +11,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useDispatch } from "react-redux";
 import { setActiveSettingsPage } from "../../../redux/slices/activeSettingsPage";
 
-export default function Skills({ data }) {
+export default function ImmediateNeeds({ data }) {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const renderItem = ({ item }) => (
@@ -21,17 +21,7 @@ export default function Skills({ data }) {
           source={require("../../../../assets/sperator.png")}
           style={styles.sperator}
         />{" "}
-        {item.Skill}{" "}
-        <Image
-          source={require("../../../../assets/sperator.png")}
-          style={styles.sperator}
-        />{" "}
-        {item.Level}{" "}
-        <Image
-          source={require("../../../../assets/sperator.png")}
-          style={styles.sperator}
-        />{" "}
-        {item.Reference}
+        {item.ImmediateNeed}
       </Text>
     </View>
   );
@@ -39,14 +29,14 @@ export default function Skills({ data }) {
     <TouchableOpacity
       style={styles.container}
       onPress={() => {
-        dispatch(setActiveSettingsPage("Skills"));
+        dispatch(setActiveSettingsPage("ImmediateNeeds"));
         navigation.navigate("Settings");
       }}
     >
       {data && data.length > 0 ? (
         <>
           <Image
-            source={require("../../../../assets/Skills.png")}
+            source={require("../../../../assets/IN.png")}
             style={styles.image}
           />
 
@@ -59,7 +49,7 @@ export default function Skills({ data }) {
           />
         </>
       ) : (
-        <Text style={styles.placeHolder}>Skills</Text>
+        <Text style={styles.placeHolder}>Immediate Needs</Text>
       )}
     </TouchableOpacity>
   );

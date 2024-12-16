@@ -1,7 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { AUTH_API } from "@env";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import Screen0 from "./signupScreens/Screen0";
 import Screen1 from "./signupScreens/Screen1";
@@ -53,16 +52,12 @@ export default function Signup({ setActivePage }) {
       return { ...prev, LastName: value };
     });
   };
-  const url1 = `${AUTH_API}/send-Otp`;
-  const url2 = "http://192.168.1.103:5000/api/auth/send-Otp";
 
-  console.log(url1 === url2);
   const sendOTP = async () => {
     const config = {
       method: "post",
-      url: `${AUTH_API}/send-Otp`,
+      url: `${process.env.EXPO_PUBLIC_AUTH_API}/send-Otp`,
       headers: {
-        "Accept-Language": "en",
         "Content-Type": "application/json",
       },
       data: {
@@ -87,20 +82,23 @@ export default function Signup({ setActivePage }) {
     try {
       const config = {
         method: "post",
-        url: `${AUTH_API}/user/register/verify-otp`,
+        url: `${process.env.EXPO_PUBLIC_AUTH_API}/verify-Otp`,
         headers: {
-          "Accept-Language": "en",
           "Content-Type": "application/json",
         },
         data: {
-          contactInfo: userInfo.Email,
-          otp: userInfo.OTP,
+          email: userInfo.Email,
+          sentOTP: userInfo.OTP,
         },
       };
 
       const response = await axios(config);
 
-      if (response.status === 200 && response.data.status === 200) {
+      // Check for successful OTP verification using the message in the response
+      if (
+        response.status === 200 &&
+        response.data.message === "OTP verified successfully"
+      ) {
         return true;
       } else {
         setErrorInForm(
@@ -109,6 +107,8 @@ export default function Signup({ setActivePage }) {
         return false;
       }
     } catch (error) {
+      console.log(error);
+
       const errorMessage = error.response
         ? error.response.data.message || "OTP verification failed"
         : error.message;
@@ -117,20 +117,21 @@ export default function Signup({ setActivePage }) {
       return false;
     }
   };
+
   const signUp = async () => {
     try {
       const config = {
         method: "post",
-        url: `${AUTH_API}/auth/register`,
+        url: `${process.env.EXPO_PUBLIC_AUTH_API}/register`,
         headers: {
           "Accept-Language": "en",
           "Content-Type": "application/json",
         },
         data: {
-          contactInfo: userInfo.Email,
-          userName: `${userInfo.FirstName}${userInfo.LastName}`,
+          email: userInfo.Email,
+          FirstName: userInfo.FirstName,
+          LastName: userInfo.LastName,
           password: userInfo.Password,
-          appType: "MOBILE",
           latitude: location.coords.latitude,
           longitude: location.coords.longitude,
         },
@@ -147,6 +148,8 @@ export default function Signup({ setActivePage }) {
         return false;
       }
     } catch (error) {
+      console.log(error);
+
       const errorMessage = error.response
         ? error.response.data.message || "Registration failed"
         : error.message;

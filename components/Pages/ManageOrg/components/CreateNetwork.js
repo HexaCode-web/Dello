@@ -10,26 +10,26 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { NETWORK_API } from "@env";
 
 import { useGetLocation } from "../../../hooks/getLocation";
-export default function CreateNetwork() {
-  const Org = useSelector((state) => state.auth.org);
+import DropdownInput from "../../../GeneralComponents/DropdownInput";
+export default function CreateNetwork({ userId, orgId }) {
+  const User = useSelector((state) => state.auth.user);
+
   const [activePage, setActivePage] = useState(0);
   const [errorInForm, setErrorInForm] = useState("");
   const [location, error] = useGetLocation();
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   const [network, setNetwork] = useState({
-    networkName: "",
+    name: "",
     startDate: new Date(),
     endDate: new Date(),
     type: "",
-    joiningCondition: "",
     size: 0,
-    adminId: Org.userId,
-    orgId: Org.organizationId,
+    adminId: userId,
+    orgId: orgId,
     latitude: location?.coords.latitude,
     longitude: location?.coords.longitude,
   });
-  console.log(network);
 
   const handleInputChange = (key, value) => {
     setNetwork((prev) => ({
@@ -41,7 +41,7 @@ export default function CreateNetwork() {
   };
 
   const validatePage = () => {
-    if (activePage === 0 && !network.networkName) {
+    if (activePage === 0 && !network.name) {
       setErrorInForm("Network name is required.");
       return false;
     }
@@ -50,8 +50,6 @@ export default function CreateNetwork() {
       return false;
     }
     if (network.endDate < network.startDate) {
-      console.log(true);
-
       setErrorInForm("End date cant be before the start date.");
       return false;
     }
@@ -63,10 +61,7 @@ export default function CreateNetwork() {
       setErrorInForm("Network type is required.");
       return false;
     }
-    if (activePage === 4 && !network.joiningCondition) {
-      setErrorInForm("Joining condition is required.");
-      return false;
-    }
+
     if (activePage === 5 && !network.size) {
       setErrorInForm("size condition is required.");
       return false;
@@ -77,7 +72,7 @@ export default function CreateNetwork() {
 
   const Continue = () => {
     if (validatePage()) {
-      if (activePage === 5) {
+      if (activePage === 4) {
         createNetwork();
       } else {
         setActivePage((prev) => prev + 1);
@@ -88,17 +83,16 @@ export default function CreateNetwork() {
   const createNetwork = async () => {
     try {
       const response = await axios.post(
-        `${NETWORK_API}/network/register_network`,
+        `${process.env.EXPO_PUBLIC_NETWORK_API}/addNetwork`,
         network,
         {
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${Org.token}`,
+            Authorization: `Bearer ${User.Token}`,
           },
         }
       );
       Alert.alert("Success", "Network created successfully.");
-      console.log(response.data);
     } catch (error) {
       console.error(error);
       Alert.alert("Error", "Failed to create the network.");
@@ -111,8 +105,6 @@ export default function CreateNetwork() {
     }
   };
   const onDateChangeEnd = (event, selectedDate) => {
-    console.log(selectedDate, network.startDate);
-
     setShowDatePicker(false);
     if (selectedDate) {
       setNetwork((prev) => ({ ...prev, endDate: selectedDate }));
@@ -126,8 +118,8 @@ export default function CreateNetwork() {
             <Text style={styles.signUpPromptText}>Network Name</Text>
             <TextInput
               placeholder="Network Name"
-              value={network.networkName}
-              onChangeText={(text) => handleInputChange("networkName", text)}
+              value={network.name}
+              onChangeText={(text) => handleInputChange("name", text)}
               style={styles.input}
             />
           </View>
@@ -181,28 +173,18 @@ export default function CreateNetwork() {
         {activePage === 3 && (
           <View style={styles.inputWrapper}>
             <Text style={styles.signUpPromptText}>Network Type</Text>
-            <TextInput
-              placeholder="Network Type"
+            <DropdownInput
+              data={[
+                { label: "Private", value: "Private" },
+                { label: "Public", value: "Public" },
+              ]}
               value={network.type}
-              onChangeText={(text) => handleInputChange("type", text)}
-              style={styles.input}
+              setValue={(text) => handleInputChange("type", text)}
             />
           </View>
         )}
+
         {activePage === 4 && (
-          <View style={styles.inputWrapper}>
-            <Text style={styles.signUpPromptText}>Joining Condition</Text>
-            <TextInput
-              placeholder="Joining Condition"
-              value={network.joiningCondition}
-              onChangeText={(text) =>
-                handleInputChange("joiningCondition", text)
-              }
-              style={styles.input}
-            />
-          </View>
-        )}
-        {activePage === 5 && (
           <View style={styles.inputWrapper}>
             <Text style={styles.signUpPromptText}>Size</Text>
             <TextInput
@@ -217,7 +199,7 @@ export default function CreateNetwork() {
       <View style={styles.buttonWrapper}>
         <TouchableOpacity onPress={Continue} style={styles.DefaultButton}>
           <Text style={styles.buttonText}>
-            {activePage === 5 ? "Create Network" : "Continue"}
+            {activePage === 4 ? "Create Network" : "Continue"}
           </Text>
         </TouchableOpacity>
       </View>

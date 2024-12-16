@@ -50,8 +50,8 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   input: {
-    width: 50,
-    height: 50,
+    width: 40,
+    height: 40,
     backgroundColor: "#F5F5F5",
     textAlign: "center",
     fontSize: FONTS.large,

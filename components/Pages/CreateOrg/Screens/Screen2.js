@@ -15,15 +15,15 @@ export default function Screen2({
   return (
     <>
       <View style={styles.textWrapper}>
-        <Text style={styles.Header}>Personal information</Text>
+        <Text style={styles.Header}>Create an organization</Text>
       </View>
       <View style={styles.inputsWrapper}>
         <View style={styles.inputWrapper}>
-          <Text style={styles.signUpPromptText}>Organization name</Text>
           <TextInput
             style={styles.input}
             onChangeText={(value) => onChangeOrgName(value)}
             value={userInfo.orgName}
+            placeholder="Organization name"
           />
         </View>
       </View>
@@ -34,7 +34,7 @@ export default function Screen2({
               setErrorInForm("Organization name is required");
               return;
             }
-            setActiveInnerPage(3);
+            setActiveInnerPage(1);
             setErrorInForm("");
           }}
           style={styles.DefaultButton}

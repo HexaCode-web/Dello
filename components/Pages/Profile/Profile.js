@@ -1,9 +1,8 @@
 import { View, StyleSheet, FlatList } from "react-native";
 import TopBar from "../../GeneralComponents/TopBar";
 import Header from "./components/Header";
-import { useEffect, useState } from "react";
-import axios from "axios";
-import { PROFILE_API } from "@env";
+import { useCallback, useState } from "react";
+
 import { useSelector } from "react-redux";
 import PresentRole from "./components/PresentRole";
 import { useFocusEffect } from "@react-navigation/native";
@@ -13,94 +12,41 @@ import HighLights from "./components/HighLights";
 import Education from "./components/Education";
 import PreviousRole from "./components/PreviousRole";
 import Skills from "./components/Skills";
-
+import ImmediateNeeds from "./components/ImmediateNeeds";
 export default function Profile() {
   const User = useSelector((state) => state.auth.user);
-  const isOrgLoggedIn = useSelector((state) => state.auth.isOrgLoggedIn);
-  const tabsAr = isOrgLoggedIn
-    ? [
-        { Name: "Home", Page: "Home" },
-        { Name: "Configure", Page: "Settings" },
-        { Name: "Manage Origination", Page: "ManageOrg" },
-      ]
-    : [
-        { Name: "Home", Page: "Home" },
-        { Name: "Configure", Page: "Settings" },
-        { Name: "Create Origination", Page: "CreateOrg" },
-        {
-          Name: "Login Origination",
-          Page: "SignInOrg",
-        },
-      ];
-  const [data, setData] = useState(null);
+  const tabsAr = [
+    { Name: "Settings", Page: "Settings" },
+    { Name: "Organizations", Page: "ManageOrg" },
+  ];
 
-  const fetchPresentRole = async () => {
-    try {
-      const options = {
-        headers: {
-          Accept: "application/json",
-          "Accept-Language": "en",
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${User.Token}`,
-        },
-      };
-
-      const presentRole = axios.get(
-        `${PROFILE_API}/present-role/get_present_role_details/${User.ID}`,
-        options
-      );
-      const skills = axios.get(
-        `${PROFILE_API}/skill/get_skill_details/${User.ID}`,
-        options
-      );
-      const previousRole = axios.get(
-        `${PROFILE_API}/previous-role/get_previous_role_details/${User.ID}`,
-        options
-      );
-      const education = axios.get(
-        `${PROFILE_API}/education/get_education_details/${User.ID}`,
-        options
-      );
-      const highLight = axios.get(
-        `${PROFILE_API}/highlights/get_highight_details/${User.ID}`,
-        options
-      );
-      const businessDriver = axios.get(
-        `${PROFILE_API}/business-drivers/get_business_driver_details/${User.ID}`,
-        options
-      );
-
-      const [response1, response2, response3, response4, response5, response6] =
-        await Promise.all([
-          presentRole,
-          skills,
-          previousRole,
-          education,
-          highLight,
-          businessDriver,
-        ]);
-
-      setData({
-        presentRole: response1.data,
-        skills: response2.data,
-        previousRole: response3.data,
-        education: response4.data,
-        highLight: response5.data,
-        businessDriver: response6.data,
-      });
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
+  const [data, setData] = useState({
+    presentRole: User.user.presentRole,
+    businessDriver: User.user.businessDrivers,
+    highLight: User.user.highlights,
+    education: User.user.education,
+    previousRole: User.user.previousRoles,
+    skills: User.user.skills,
+    ImmediateNeeds: User.user.ImmediateNeeds,
+  });
   useFocusEffect(
-    React.useCallback(() => {
-      fetchPresentRole();
-    }, [])
+    useCallback(() => {
+      setData({
+        presentRole: User.user.presentRole,
+        businessDriver: User.user.businessDrivers,
+        highLight: User.user.highlights,
+        education: User.user.education,
+        previousRole: User.user.previousRoles,
+        skills: User.user.skills,
+        ImmediateNeeds: User.user.ImmediateNeeds,
+      });
+    }, [User])
   );
 
   const renderItem = ({ item }) => {
     switch (item.type) {
+      case "ImmediateNeeds":
+        return <ImmediateNeeds data={item.data} />;
       case "PresentRole":
         return <PresentRole data={item.data} />;
       case "BusinessDriver":
@@ -113,6 +59,7 @@ export default function Profile() {
         return <PreviousRole data={item.data} />;
       case "Skills":
         return <Skills data={item.data} />;
+
       default:
         return null;
     }
@@ -120,6 +67,7 @@ export default function Profile() {
 
   const listData = [
     { type: "PresentRole", data: data?.presentRole },
+    { type: "ImmediateNeeds", data: data?.ImmediateNeeds },
     { type: "BusinessDriver", data: data?.businessDriver },
     { type: "HighLights", data: data?.highLight },
     { type: "Education", data: data?.education },
@@ -147,10 +95,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "white",
-    alignItems: "center",
     paddingTop: 40,
     paddingBottom: 50,
     justifyContent: "flex-start",
-    color: "black",
   },
 });

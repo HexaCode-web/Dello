@@ -1,7 +1,7 @@
 import { View, StyleSheet, Text, TouchableOpacity, Image } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import TopBar from "./components/TopBar";
-import react, { useCallback, useEffect } from "react";
+import react, { useCallback, useEffect, useState } from "react";
 import PresentRole from "./components/PresentRole";
 import BusinessDrivers from "./components/BusinessDrivers";
 import HighLights from "./components/HighLights";
@@ -10,85 +10,51 @@ import PreviousRoles from "./components/PreviousRoles";
 import Education from "./components/Education";
 import { COLORS, FONTS } from "../../../theme";
 import { useSelector } from "react-redux";
-import axios from "axios";
-import { PROFILE_API } from "@env";
 import { useFocusEffect } from "@react-navigation/native";
-
+import ImmediateNeeds from "./components/ImmediateNeeds";
 export default function Settings() {
+  const activeSettingsPage = useSelector((state) => state.activeSettingsPage);
+
   const [showMenu, setShowMenu] = react.useState(false);
-  const [activePage, setActivePage] = react.useState("main");
+  const [activePage, setActivePage] = react.useState(
+    activeSettingsPage.activePage
+  );
+  useEffect(() => {
+    setActivePage(activeSettingsPage.activePage);
+  }, [activeSettingsPage.activePage]);
+
   const User = useSelector((state) => state.auth.user);
-  const [data, setData] = react.useState(null);
+  const [data, setData] = useState({
+    presentRole: User.user.presentRole,
+    businessDriver: User.user.businessDriver,
+    highLight: User.user.highlights,
+    education: User.user.education,
+    previousRole: User.user.previousRole,
+    skills: User.user.skills,
+  });
+
+  useFocusEffect(
+    useCallback(() => {
+      setData({
+        presentRole: User.user.presentRole,
+        businessDriver: User.user.businessDriver,
+        highLight: User.user.highlights,
+        education: User.user.education,
+        previousRole: User.user.previousRole,
+        skills: User.user.skills,
+      });
+    }, [User])
+  );
 
   const Tabs = [
     { name: "Present Role", Page: "PresentRole" },
     { name: "Business Drivers", Page: "BusinessDrivers" },
-    { name: "Highlights  bug", Page: "Highlights" },
+    { name: "Highlights ", Page: "Highlights" },
     { name: "Skills", Page: "Skills" },
     { name: "Previous Roles", Page: "PreviousRoles" },
-    { name: "Education  bug", Page: "Education" },
+    { name: "Education ", Page: "Education" },
+    { name: "Immediate Need ", Page: "ImmediateNeeds" },
   ];
-  const fetchPresentRole = async () => {
-    try {
-      const options = {
-        headers: {
-          Accept: "application/json",
-          "Accept-Language": "en",
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${User.Token}`,
-        },
-      };
-      const presentRole = axios.get(
-        `${PROFILE_API}/present-role/get_present_role_details/${User.ID}`,
-        options
-      );
-      const skills = axios.get(
-        `${PROFILE_API}/skill/get_skill_details/${User.ID}`,
-        options
-      );
-      const previousRole = axios.get(
-        `${PROFILE_API}/previous-role/get_previous_role_details/${User.ID}`,
-        options
-      );
-      const education = axios.get(
-        `${PROFILE_API}/education/get_education_details/${User.ID}`,
-        options
-      );
-      const highLight = axios.get(
-        `${PROFILE_API}/highlights/get_highight_details/${User.ID}`,
-        options
-      );
-      const businessDriver = axios.get(
-        `${PROFILE_API}/business-drivers/get_business_driver_details//${User.ID}`,
-        options
-      );
-      const [response1, response2, response3, response4, response5, response6] =
-        await Promise.all([
-          presentRole,
-          skills,
-          previousRole,
-          education,
-          highLight,
-          businessDriver,
-        ]);
-
-      setData({
-        presentRole: response1.data,
-        skills: response2.data.skillData,
-        previousRole: response3.data.previousRole,
-        education: response4.data.education,
-        highLight: response5.data.highlights,
-        businessDriver: response6.data.businessDrivers,
-      });
-    } catch (error) {
-      console.log(error);
-    }
-  };
-  useFocusEffect(
-    useCallback(() => {
-      fetchPresentRole();
-    }, [activePage])
-  );
 
   const renderTabs = Tabs.map((Tab) => {
     return (
@@ -124,16 +90,25 @@ export default function Settings() {
           {showMenu && <View style={styles.dropDown}>{renderTabs}</View>}
         </View>
       </View>
-      {activePage === "PresentRole" && <PresentRole data={data.presentRole} />}
+      {activePage === "PresentRole" && (
+        <PresentRole data={data.presentRole} setActivePage={setActivePage} />
+      )}
       {activePage === "BusinessDrivers" && (
-        <BusinessDrivers data={data.businessDriver} />
+        <BusinessDrivers setActivePage={setActivePage} />
       )}
-      {activePage === "Highlights" && <HighLights data={data.highLight} />}
-      {activePage === "Skills" && <Skills data={data.skills} />}
+      {activePage === "Highlights" && (
+        <HighLights setActivePage={setActivePage} />
+      )}
+      {activePage === "Skills" && <Skills setActivePage={setActivePage} />}
       {activePage === "PreviousRoles" && (
-        <PreviousRoles data={data.previousRole} />
+        <PreviousRoles setActivePage={setActivePage} />
       )}
-      {activePage === "Education" && <Education data={data.education} />}
+      {activePage === "Education" && (
+        <Education setActivePage={setActivePage} />
+      )}
+      {activePage === "ImmediateNeeds" && (
+        <ImmediateNeeds setActivePage={setActivePage} />
+      )}
     </View>
   );
 }
@@ -158,7 +133,7 @@ const styles = StyleSheet.create({
   currentTab: {
     fontSize: FONTS.largeHeader,
     textAlign: "left",
-
+    width: "90%",
     fontFamily: FONTS.familyBold,
     color: COLORS.secondary,
   },
@@ -173,8 +148,8 @@ const styles = StyleSheet.create({
   dropDown: {
     zIndex: 9990,
     position: "absolute",
-    top: 90,
-    left: 60,
+    top: 60,
+    left: 30,
     padding: 30,
     borderRadius: 15,
     shadowColor: "#000",
@@ -194,7 +169,6 @@ const styles = StyleSheet.create({
   buttonTextEmpty: {
     fontSize: FONTS.medium,
     textAlign: "left",
-
     fontFamily: FONTS.familyBold,
     color: COLORS.secondary,
   },

@@ -9,55 +9,32 @@ import { COLORS, FONTS } from "../../../../theme";
 
 export default function Screen1({
   userInfo,
-  onChangePassword,
-  onChangeConfirmPassword,
+  onChangeAddress,
   setActiveInnerPage,
   setErrorInForm,
 }) {
   return (
     <>
-      <View style={styles.textWrapper}>
-        <Text style={styles.Header}>Create Password</Text>
-      </View>
       <View style={styles.inputsWrapper}>
         <View style={styles.inputWrapper}>
-          <Text style={styles.signUpPromptText}>Password</Text>
           <TextInput
-            placeholder="Password"
+            placeholder="Organization address"
             returnKeyType="go"
-            secureTextEntry
             autoCorrect={false}
             style={styles.input}
-            onChangeText={(value) => onChangePassword(value)}
-            value={userInfo.password}
-          />
-        </View>
-        <View style={styles.inputWrapper}>
-          <Text style={styles.signUpPromptText}>Confirm Password</Text>
-          <TextInput
-            placeholder="Password"
-            returnKeyType="go"
-            secureTextEntry
-            autoCorrect={false}
-            style={styles.input}
-            onChangeText={(value) => onChangeConfirmPassword(value)}
-            value={userInfo.confirmPassword}
+            onChangeText={(value) => onChangeAddress(value)}
+            value={userInfo.address}
           />
         </View>
       </View>
       <View style={styles.buttonWrapper}>
         <TouchableOpacity
           onPress={() => {
-            if (userInfo.password.length < 8) {
-              setErrorInForm("Password must be at least 8 characters long");
+            if (userInfo.address === "") {
+              setErrorInForm("Address is required");
               return;
             }
-            if (userInfo.confirmPassword === userInfo.password) {
-              setActiveInnerPage(2);
-              setErrorInForm("");
-            } else {
-              setErrorInForm("passwords do not match");
-            }
+            setActiveInnerPage(2);
           }}
           style={styles.DefaultButton}
         >

@@ -1,8 +1,13 @@
-import { View, Text, StyleSheet, Image } from "react-native";
+import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
 import { FONTS, COLORS } from "../../../../theme";
 import { FlatList } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { useDispatch } from "react-redux";
+import { setActiveSettingsPage } from "../../../redux/slices/activeSettingsPage";
 
 export default function HighLights({ data }) {
+  const navigation = useNavigation();
+  const dispatch = useDispatch();
   function getTimeSince(startDate) {
     // Get the current date
     const currentDate = new Date();
@@ -43,9 +48,7 @@ export default function HighLights({ data }) {
       result += `${months} Mth${months > 1 ? "s" : ""} `;
     }
 
-    if (days > 0) {
-      result += `${days} day${days > 1 ? "s" : ""}`;
-    }
+
 
     return result.trim();
   }
@@ -56,13 +59,13 @@ export default function HighLights({ data }) {
           source={require("../../../../assets/sperator.png")}
           style={styles.sperator}
         />{" "}
-        {item.highlightsName}{" "}
+        {item.Highlight}{" "}
         <Image
           source={require("../../../../assets/sperator.png")}
           style={styles.sperator}
         />{" "}
-        {item.highlightsReferenceName}{" "}
-        {getTimeSince(data.highlightsStartedDate) != "" ? (
+        {item.Reference}{" "}
+        {getTimeSince(data.Date) != "" ? (
           <Image
             source={require("../../../../assets/sperator.png")}
             style={styles.sperator}
@@ -70,31 +73,40 @@ export default function HighLights({ data }) {
         ) : (
           ""
         )}
-        {getTimeSince(data.highlightsStartedDate)}
+        {getTimeSince(data.Date)}
       </Text>
     </View>
   );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.imageWrapper}>
-        <Image
-          source={require("../../../../assets/Hightlights.png")}
-          style={styles.image}
-        />
-      </View>
-      {data.highlights && data.highlights.length > 0 ? (
-        <FlatList
-          data={data.highlights}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={renderItem}
-          style={styles.list}
-          ItemSeparatorComponent={() => <View style={{ height: 6 }} />}
-        />
+    <TouchableOpacity
+      style={styles.container}
+      onPress={() => {
+        dispatch(setActiveSettingsPage("Highlights"));
+        navigation.navigate("Settings");
+      }}
+    >
+      {data && data.length > 0 ? (
+        <>
+          <View style={styles.imageWrapper}>
+            <Image
+              source={require("../../../../assets/Hightlights.png")}
+              style={styles.image}
+            />
+          </View>
+
+          <FlatList
+            data={data}
+            keyExtractor={(item) => item._id}
+            renderItem={renderItem}
+            style={styles.list}
+            ItemSeparatorComponent={() => <View style={{ height: 6 }} />}
+          />
+        </>
       ) : (
-        <Text>No data available</Text>
+        <Text style={styles.placeHolder}>High Lights</Text>
       )}
-    </View>
+    </TouchableOpacity>
   );
 }
 const styles = StyleSheet.create({
@@ -105,12 +117,17 @@ const styles = StyleSheet.create({
   container: {
     padding: 20,
     width: "100%",
+    paddingRight: 50,
     borderColor: COLORS.borders,
     borderBottomWidth: 1,
-    marginTop: 20,
     flexDirection: "row",
     alignContent: "center",
     justifyContent: "flex-start",
+  },
+  placeHolder: {
+    margin: "auto",
+    fontSize: FONTS.medium,
+    fontFamily: FONTS.familyBold,
   },
   image: {
     width: 40,
@@ -121,6 +138,7 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     objectFit: "contain",
+    paddingBottom: 8,
   },
 
   text: {

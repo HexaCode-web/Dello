@@ -1,37 +1,13 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-} from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { View, FlatList, StyleSheet } from "react-native";
 import Header from "./components/Header";
 import Navigation from "./components/Navigation";
 import NetworkItem from "./components/NetworkItem";
-import { FONTS } from "../../../theme";
 
 const Network = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
-  const networks = [
-    {
-      id: "1",
-      name: "Example Network",
-      code: "EXAMPLE",
-      status: "Join",
-      tags: ["Private Corporate", "BoE Cyber"],
-    },
-    {
-      id: "2",
-      name: "Example Network",
-      code: "EXAMPLE",
-      status: "Pending",
-      tags: ["Private Corporate", "BoE Cyber"],
-    },
-  ];
+  const networks = [];
 
   const renderNetworkItem = ({ item }) => <NetworkItem network={item} />;
 

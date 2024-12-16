@@ -5,68 +5,162 @@ import {
   TextInput,
   StyleSheet,
   TouchableOpacity,
+  Modal,
   ScrollView,
+  Image,
+  Alert,
+  FlatList,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Feather } from "@expo/vector-icons";
 import axios from "axios";
-import { useSelector } from "react-redux";
-import { PROFILE_API } from "@env";
+import { useDispatch, useSelector } from "react-redux";
 import { COLORS, FONTS } from "../../../../theme";
-
-const HighLights = ({ data }) => {
+import { updateUserData } from "../../../redux/slices/authSlice";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
+const HighLights = ({ setActivePage }) => {
   const User = useSelector((state) => state.auth.user);
+  const dispatch = useDispatch();
 
   const [highLight, setHighLight] = useState("");
   const [reference, setReference] = useState("");
   const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showDatePickerForEdit, setShowDatePickerForEdit] = useState(false);
   const [error, setError] = useState();
+  const [saved, setSaved] = useState(false); // State to track saved status
+  const [activeHighlight, setActiveHighlight] = useState(null);
+  const [isModalVisible, setModalVisible] = useState(false);
+  function getTimeSince(startDate) {
+    // Get the current date
+    const currentDate = new Date();
 
-  const onDateChange = (event, selectedDate) => {
-    setShowDatePicker(false);
-    if (selectedDate) {
-      setDate(selectedDate);
+    // Convert the startDate to a Date object
+    const start = new Date(startDate);
+
+    // Initialize values for years, months, and days
+    let years = currentDate.getFullYear() - start.getFullYear();
+    let months = currentDate.getMonth() - start.getMonth();
+    let days = currentDate.getDate() - start.getDate();
+
+    // Adjust for negative days
+    if (days < 0) {
+      months--;
+      const previousMonth = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth(),
+        0
+      );
+      days += previousMonth.getDate();
     }
+
+    // Adjust for negative months
+    if (months < 0) {
+      years--;
+      months += 12;
+    }
+
+    // Build the result string
+    let result = "";
+
+    if (years > 0) {
+      result += `${years} Yr${years > 1 ? "s" : ""} `;
+    }
+
+    if (months > 0) {
+      result += `${months} Mth${months > 1 ? "s" : ""} `;
+    }
+
+    return result.trim();
+  }
+
+  const hideModal = () => {
+    setActiveHighlight(null);
+    setModalVisible(false);
+  };
+  const showModal = (item) => {
+    setActiveHighlight(item);
+    setModalVisible(true);
+  };
+
+  const renderItem = ({ item }) => (
+    <View style={styles.itemContainer}>
+      <Text style={styles.text}>
+        <Image
+          source={require("../../../../assets/sperator.png")}
+          style={styles.sperator}
+        />{" "}
+        {item.Highlight}{" "}
+        <Image
+          source={require("../../../../assets/sperator.png")}
+          style={styles.sperator}
+        />{" "}
+        {item.Reference}{" "}
+        {getTimeSince(item.Date) != "" ? (
+          <Image
+            source={require("../../../../assets/sperator.png")}
+            style={styles.sperator}
+          />
+        ) : (
+          ""
+        )}
+        {getTimeSince(item.Date)}
+      </Text>
+      <TouchableOpacity>
+        <FontAwesome6
+          name="edit"
+          size={24}
+          color={COLORS.primary}
+          style={styles.icon}
+          onPress={() => {
+            showModal(item);
+          }}
+        />
+      </TouchableOpacity>
+      <TouchableOpacity
+        onPress={() => {
+          deleteProperty(item._id);
+        }}
+      >
+        <Ionicons
+          name="trash-outline"
+          size={24}
+          color={COLORS.primary}
+          style={styles.icon}
+        />
+      </TouchableOpacity>
+    </View>
+  );
+  const onDateChange = (event, selectedDate) => {
+    setDate(selectedDate);
+
+    setShowDatePicker(false);
+  };
+  const onDateChangeForEdit = (event, selectedDate) => {
+    setActiveHighlight((prev) => {
+      return { ...prev, Date: selectedDate };
+    });
+    setShowDatePickerForEdit(false);
   };
   const saveHighLightDetails = async () => {
+    setSaved(false); // Reset saved status before saving
     if (highLight == "") {
       setError("highLight is required");
       return;
     }
     setError("");
-    const nextId =
-      data?.length > 0 ? Math.max(...data.map((obj) => obj.id)) + 1 : 1;
-    let newData;
-    if (data) {
-      newData = {
-        highlightsDTO: [
-          ...data,
-          {
-            highlightsName: highLight,
-            highlightsReferenceName: reference,
-            highlightsStartedDate: date.toISOString().split("T")[0],
-            id: nextId,
-          },
-        ],
-      };
-    } else {
-      newData = {
-        highlightsDTO: [
-          {
-            highlightsName: highLight,
-            highlightsReferenceName: reference,
-            highlightsStartedDate: date.toISOString().split("T")[0],
-            id: nextId,
-          },
-        ],
-      };
-    }
 
     try {
       const response = await axios.post(
-        `${PROFILE_API}/highlights/save_highlight_details/${User.ID}`,
-        newData,
+        `${process.env.EXPO_PUBLIC_PROFILE_API}/highLights/add/${User.ID}`,
+        {
+          highLight: {
+            Highlight: highLight,
+            Reference: reference,
+            Date: date,
+          },
+        },
         {
           headers: {
             Accept: "application/json",
@@ -78,63 +172,213 @@ const HighLights = ({ data }) => {
       );
 
       if (response.status === 200) {
-        setError("Saved");
+        Alert.alert("Saved", "Saved");
+        dispatch(updateUserData(response.data));
+        setSaved(true); // Set saved status after saving
       }
     } catch (error) {
       console.log(error);
       setError(error.message);
     }
   };
+  const deleteProperty = async (ID) => {
+    try {
+      const response = await axios.delete(
+        `${process.env.EXPO_PUBLIC_PROFILE_API}/highLights/delete/${User.user._id}`,
+        {
+          headers: {
+            Accept: "application/json",
+            "Accept-Language": "en",
+            "Content-Type": "application/json",
+            authorization: `Bearer ${User.Token}`,
+          },
+          data: { highLightId: ID },
+        }
+      );
+
+      if (response.status === 200) {
+        setSaved(false);
+        console.log(response.data.user);
+
+        dispatch(updateUserData(response.data.user));
+      }
+    } catch (error) {
+      console.log(error);
+      Alert.alert("Error", error.message);
+    }
+  };
+
+  const editProperty = async () => {
+    try {
+      const response = await axios.put(
+        `${process.env.EXPO_PUBLIC_PROFILE_API}/highLights/update/${User.user._id}`,
+        {
+          highLightId: activeHighlight._id,
+          updatedHighLight: activeHighlight,
+        },
+        {
+          headers: {
+            Accept: "application/json",
+            "Accept-Language": "en",
+            "Content-Type": "application/json",
+            authorization: `Bearer ${User.Token}`,
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        setSaved(false);
+        setActiveHighlight(null);
+        setModalVisible(false);
+        dispatch(updateUserData(response.data.user));
+      }
+    } catch (error) {
+      console.log(error);
+      Alert.alert("Error", error.message);
+    }
+  };
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.label}>Highlight</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Add the highLight"
-        value={highLight}
-        onChangeText={setHighLight}
-      />
-
-      <Text style={styles.label}>Reference (optional)</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Some text here..."
-        value={reference}
-        onChangeText={setReference}
-      />
-
-      <Text style={styles.label}>date (optional)</Text>
-      <View style={styles.datePickerContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Some text here..."
-          value={date.toDateString()}
-          editable={false}
-        />
-        <TouchableOpacity onPress={() => setShowDatePicker(true)}>
-          <Feather name="calendar" size={24} color="gray" />
-        </TouchableOpacity>
-      </View>
-
-      {showDatePicker && (
-        <DateTimePicker
-          value={date}
-          mode="date"
-          display="default"
-          onChange={onDateChange}
-        />
+    <ScrollView>
+      {User.user.highlights.length > 0 && (
+        <View style={styles.container}>
+          <Text style={styles.title}>Previously added</Text>
+          <FlatList
+            data={User.user.highlights}
+            keyExtractor={(item) => item._id}
+            renderItem={renderItem}
+            style={styles.list}
+            ItemSeparatorComponent={() => <View style={{ height: 6 }} />}
+          />
+        </View>
       )}
-      {error && <Text style={styles.Error}>{error}</Text>}
+      <View style={styles.container}>
+        <Text style={styles.title}>Add</Text>
 
-      <View style={styles.buttonWrapper}>
-        <TouchableOpacity
-          onPress={saveHighLightDetails}
-          style={styles.DefaultButton}
-        >
-          <Text style={styles.buttonText}>Save</Text>
-        </TouchableOpacity>
+        <Text style={styles.label}>Highlight</Text>
+        <TextInput
+          style={[styles.input, saved && { color: COLORS.secondary }]}
+          placeholder="Add the highLight"
+          value={highLight}
+          onChangeText={setHighLight}
+        />
+        <Text style={styles.label}>Reference (optional)</Text>
+        <TextInput
+          style={[styles.input, saved && { color: COLORS.secondary }]}
+          placeholder="Some text here..."
+          value={reference}
+          onChangeText={setReference}
+        />
+
+        <Text style={styles.label}>date (optional)</Text>
+        <View style={styles.datePickerContainer}>
+          <TextInput
+            style={[styles.input, saved && { color: COLORS.secondary }]}
+            placeholder="Some text here..."
+            value={date.toDateString()}
+            editable={false}
+          />
+          <TouchableOpacity onPress={() => setShowDatePicker(true)}>
+            <Feather name="calendar" size={24} color="gray" />
+          </TouchableOpacity>
+        </View>
+
+        {showDatePicker && (
+          <DateTimePicker
+            value={date}
+            mode="date"
+            display="default"
+            onChange={onDateChange}
+          />
+        )}
+
+        {showDatePickerForEdit && (
+          <DateTimePicker
+            value={new Date(activeHighlight.Date)}
+            mode="date"
+            display="default"
+            onChange={onDateChangeForEdit}
+          />
+        )}
+        {error && <Text style={styles.Error}>{error}</Text>}
+
+        <View style={styles.buttonWrapper}>
+          <TouchableOpacity
+            onPress={async () => {
+              await saveHighLightDetails();
+              setActivePage("Skills");
+            }}
+            style={styles.DefaultButton}
+          >
+            <Text style={styles.buttonText}>Next</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={saveHighLightDetails}
+            style={styles.DefaultButton}
+          >
+            <Text style={styles.buttonText}>Save</Text>
+          </TouchableOpacity>
+        </View>
       </View>
+      <Modal
+        visible={isModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={hideModal} // Android back button behavior
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.container}>
+            <Text style={styles.label}>Highlight</Text>
+            <TextInput
+              style={[styles.input, saved && { color: COLORS.secondary }]}
+              placeholder="Add the highLight"
+              value={activeHighlight?.Highlight}
+              onChangeText={(value) => {
+                setActiveHighlight((prev) => {
+                  return { ...prev, Highlight: value };
+                });
+              }}
+            />
+            <Text style={styles.label}>Reference (optional)</Text>
+            <TextInput
+              style={[styles.input, saved && { color: COLORS.secondary }]}
+              placeholder="Some text here..."
+              value={activeHighlight?.Reference}
+              onChangeText={(value) => {
+                setActiveHighlight((prev) => {
+                  return { ...prev, Reference: value };
+                });
+              }}
+            />
+
+            <Text style={styles.label}>date (optional)</Text>
+            <View style={styles.datePickerContainer}>
+              <TextInput
+                style={[styles.input, saved && { color: COLORS.secondary }]}
+                value={activeHighlight?.Date}
+                editable={false}
+              />
+              <TouchableOpacity onPress={() => setShowDatePickerForEdit(true)}>
+                <Feather name="calendar" size={24} color="gray" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.buttonWrapper}>
+              <TouchableOpacity
+                onPress={editProperty}
+                style={styles.DefaultButton}
+              >
+                <Text style={styles.buttonText}>Save</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.DefaultButton}
+                onPress={hideModal}
+              >
+                <Text style={styles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 };
@@ -142,16 +386,69 @@ const HighLights = ({ data }) => {
 const styles = StyleSheet.create({
   container: {
     width: "95%",
-    marginHorizontal: "auto",
     padding: 20,
     backgroundColor: "white",
     gap: 20,
+    margin: 10,
+    marginVertical: 30,
+    borderWidth: 1,
+    borderColor: COLORS.borders,
+    borderRadius: 10,
+    position: "relative",
+  },
+  title: {
+    position: "absolute",
+    top: -25,
+    backgroundColor: "white",
+    left: 10,
+    textAlign: "center",
+    color: COLORS.secondary,
+    fontSize: FONTS.large,
+    fontFamily: FONTS.familyBold,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  modalBackdrop: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)", // Dark background for the popup
+  },
+  modalContent: {
+    width: "80%",
+    padding: 20,
+    backgroundColor: "white",
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  modalText: {
+    fontSize: 18,
+    marginBottom: 20,
   },
   label: {
     fontSize: FONTS.medium,
     fontFamily: FONTS.familyBold,
     color: "#333",
     marginBottom: 5,
+  },
+  itemContainer: {
+    borderWidth: 1,
+    borderColor: COLORS.borders,
+    borderRadius: 10,
+    display: "flex",
+    padding: 20,
+
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center", // Add this to vertically align the icon and text
+    width: "100%", // Ensure the container takes up full width
+  },
+  text: {
+    flex: 1, // Allow text to take available space
+    flexWrap: "wrap", // Wrap text if it overflows
+  },
+  icon: {
+    marginLeft: 10, // Adds space between the text and the icon
   },
   input: {
     borderWidth: 0,
@@ -166,13 +463,22 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
+  image: {
+    width: 40,
+    height: 40,
+    objectFit: "contain",
+  },
+  sperator: {
+    width: 6,
+    height: 6,
+    objectFit: "contain",
+    paddingBottom: 8,
+  },
+
   buttonWrapper: {
     width: "100%",
-
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 10,
-    marginBottom: 10,
     gap: 20,
     marginTop: 80,
   },

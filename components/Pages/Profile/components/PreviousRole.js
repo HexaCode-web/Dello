@@ -1,8 +1,13 @@
-import { View, Text, StyleSheet, Image } from "react-native";
+import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
 import { FONTS, COLORS } from "../../../../theme";
 import { FlatList } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { useDispatch } from "react-redux";
+import { setActiveSettingsPage } from "../../../redux/slices/activeSettingsPage";
 
 export default function PreviousRole({ data }) {
+  const navigation = useNavigation();
+  const dispatch = useDispatch();
   function getTimeSince(startDate) {
     // Get the current date
     const currentDate = new Date();
@@ -43,60 +48,70 @@ export default function PreviousRole({ data }) {
       result += `${months} Mth${months > 1 ? "s" : ""} `;
     }
 
-    if (days > 0) {
-      result += `${days} day${days > 1 ? "s" : ""}`;
-    }
-
     return result.trim();
   }
-  const renderItem = ({ item }) => (
-    <View>
-      <Text style={styles.text}>
-        <Image
-          source={require("../../../../assets/sperator.png")}
-          style={styles.sperator}
-        />{" "}
-        {item.positionName}{" "}
-        <Image
-          source={require("../../../../assets/sperator.png")}
-          style={styles.sperator}
-        />{" "}
-        {item.previousCompanyName}{" "}
-        <Image
-          source={require("../../../../assets/sperator.png")}
-          style={styles.sperator}
-        />{" "}
-        {item.educationStartDate}{" "}
-        {getTimeSince(data.previousCompanyJoiningDate) != "" ? (
+  const renderItem = ({ item }) => {
+    const date = new Date(item.Duration);
+
+    const formattedDate = date.toISOString().split("T")[0];
+    return (
+      <View>
+        <Text style={styles.text}>
           <Image
             source={require("../../../../assets/sperator.png")}
             style={styles.sperator}
-          />
-        ) : (
-          ""
-        )}
-        {getTimeSince(data.previousCompanyJoiningDate)}
-      </Text>
-    </View>
-  );
+          />{" "}
+          {item.Position}{" "}
+          <Image
+            source={require("../../../../assets/sperator.png")}
+            style={styles.sperator}
+          />{" "}
+          {item.Company}{" "}
+          <Image
+            source={require("../../../../assets/sperator.png")}
+            style={styles.sperator}
+          />{" "}
+          {formattedDate}{" "}
+          {getTimeSince(item.Duration) != "" ? (
+            <Image
+              source={require("../../../../assets/sperator.png")}
+              style={styles.sperator}
+            />
+          ) : (
+            ""
+          )}{" "}
+          {getTimeSince(item.Duration)}
+        </Text>
+      </View>
+    );
+  };
   return (
-    <View style={styles.container}>
-      <Image
-        source={require("../../../../assets/PreviousRole.png")}
-        style={styles.image}
-      />
-      {data.previousRole && data.previousRole.length > 0 ? (
-        <FlatList
-          data={data.previousRole}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={renderItem}
-          style={styles.list}
-          ItemSeparatorComponent={() => <View style={{ height: 6 }} />}
-        />
+    <TouchableOpacity
+      style={styles.container}
+      onPress={() => {
+        dispatch(setActiveSettingsPage("PreviousRoles"));
+        navigation.navigate("Settings");
+      }}
+    >
+      {data && data.length > 0 ? (
+        <>
+          <Image
+            source={require("../../../../assets/PreviousRole.png")}
+            style={styles.image}
+          />
+
+          <FlatList
+            data={data}
+            keyExtractor={(item) => item._id}
+            renderItem={renderItem}
+            style={styles.list}
+            ItemSeparatorComponent={() => <View style={{ height: 6 }} />}
+          />
+        </>
       ) : (
-        <Text>No data available</Text>
+        <Text style={styles.placeHolder}>Previous Roles</Text>
       )}
-    </View>
+    </TouchableOpacity>
   );
 }
 const styles = StyleSheet.create({
@@ -109,10 +124,16 @@ const styles = StyleSheet.create({
     width: "100%",
     borderColor: COLORS.borders,
     borderBottomWidth: 1,
-    marginTop: 20,
+    paddingRight: 50,
+
     flexDirection: "row",
     alignContent: "center",
     justifyContent: "flex-start",
+  },
+  placeHolder: {
+    margin: "auto",
+    fontSize: FONTS.medium,
+    fontFamily: FONTS.familyBold,
   },
   image: {
     width: 40,
@@ -123,6 +144,7 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     objectFit: "contain",
+    paddingBottom: 8,
   },
 
   text: {

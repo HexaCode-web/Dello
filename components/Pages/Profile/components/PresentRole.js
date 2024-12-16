@@ -1,6 +1,12 @@
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { COLORS, FONTS } from "../../../../theme";
+import { useNavigation } from "@react-navigation/native";
+import { useDispatch } from "react-redux";
+import { setActiveSettingsPage } from "../../../redux/slices/activeSettingsPage";
+
 export default function presentRole({ data }) {
+  const navigation = useNavigation();
+  const dispatch = useDispatch();
   function getTimeSince(startDate) {
     // Get the current date
     const currentDate = new Date();
@@ -34,36 +40,46 @@ export default function presentRole({ data }) {
     let result = "";
 
     if (years > 0) {
-      result += `${years} Yr${years > 1 ? "s" : ""} `;
+      result += `${years} year${years > 1 ? "s" : ""} `;
     }
 
     if (months > 0) {
-      result += `${months} Mth${months > 1 ? "s" : ""} `;
-    }
-
-    if (days > 0) {
-      result += `${days} day${days > 1 ? "s" : ""}`;
+      result += `${months} month${months > 1 ? "s" : ""} `;
     }
 
     return result.trim();
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.mainText}>
-        {data?.positioName} • {data?.presentRoleCompanyName}
-      </Text>
-      <View>
-        <Text style={styles.subText}>Present</Text>
-        <Text>{getTimeSince(data?.presentRoleStartedDate)}</Text>
-      </View>
-    </View>
+    <TouchableOpacity
+      style={styles.container}
+      onPress={() => {
+        dispatch(setActiveSettingsPage("PresentRole"));
+        navigation.navigate("Settings");
+      }}
+    >
+      {data.Company ? (
+        <>
+          <View>
+            <Text style={styles.mainText}>{data?.Position}</Text>
+            <Text style={styles.mainText}>{data?.Company} </Text>
+          </View>
+          <View>
+            <Text style={styles.subText}>Present</Text>
+            <Text>{getTimeSince(data?.StartDate)}</Text>
+          </View>
+        </>
+      ) : (
+        <Text style={styles.placeholder}>Present Role</Text>
+      )}
+    </TouchableOpacity>
   );
 }
 const styles = StyleSheet.create({
   container: {
     padding: 16,
     width: "100%",
+    paddingHorizontal: 40,
     display: "flex",
     borderColor: COLORS.borders,
     borderBottomWidth: 1,
@@ -71,14 +87,19 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignContent: "flex-start",
     flexDirection: "row",
-    height: 70,
+    minHeight: 70,
+  },
+  placeholder: {
+    margin: "auto",
+    fontSize: FONTS.medium,
+    fontFamily: FONTS.familyBold,
   },
   mainText: {
     fontSize: FONTS.medium,
     color: COLORS.textThird,
     fontFamily: FONTS.familyBold,
     marginBottom: 5,
-    marginLeft: 10,
+    marginRight: 20,
   },
   subText: {
     fontFamily: FONTS.familyLight,

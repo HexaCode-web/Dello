@@ -7,6 +7,7 @@
       "visible": "sticky-immersive",
       "backgroundColor": "#000000"
     },
+    "permissions": ["ACCESS_FINE_LOCATION"],
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",

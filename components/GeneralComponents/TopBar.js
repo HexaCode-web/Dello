@@ -4,11 +4,10 @@ import HamburgerButton from "../Pages/HomeScreen/components/HamburgerButton";
 import { useNavigation } from "@react-navigation/native";
 import { COLORS, FONTS } from "../../theme";
 import { useDispatch, useSelector } from "react-redux";
-import { logout, logoutOrg } from "../redux/slices/authSlice";
+import { logout } from "../redux/slices/authSlice";
 
 export default function TopBar({ Tabs }) {
   const [showMenu, setShowMenu] = react.useState(false);
-  const isOrgLoggedIn = useSelector((state) => state.auth.isOrgLoggedIn);
   const dispatch = useDispatch();
   const navigation = useNavigation(); // Assuming you are using React Navigation v5 or later
   const RenderTabs = () => {
@@ -43,20 +42,7 @@ export default function TopBar({ Tabs }) {
       {showMenu && (
         <View style={styles.dropDown}>
           {RenderTabs()}
-          {isOrgLoggedIn && (
-            <View style={styles.signUpPromptBtn}>
-              <TouchableOpacity
-                onPress={() => {
-                  setShowMenu(false);
-                  dispatch(logoutOrg());
-                }}
-              >
-                <Text style={styles.buttonTextEmpty}>
-                  Logout from organization
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
+
           <View style={styles.signUpPromptBtn}>
             <TouchableOpacity
               onPress={() => {

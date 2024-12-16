@@ -12,7 +12,8 @@ export default function Header() {
         style={styles.profilePic}
       />
       <View>
-        <Text style={styles.userName}>{User.userName}</Text>
+        <Text style={styles.userName}>{User.user.FirstName}</Text>
+        <Text style={styles.userName}>{User.user.LastName}</Text>
       </View>
     </View>
   );
@@ -38,12 +39,15 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: FONTS.largeHeader,
 
-    marginLeft: "auto",
     textAlign: "left",
     color: "black",
     fontFamily: FONTS.familyBold,
   },
-
+  placeHolder: {
+    margin: "auto",
+    fontSize: FONTS.medium,
+    fontFamily: FONTS.familyBold,
+  },
   header: {
     height: 160,
     justifyContent: "space-around",

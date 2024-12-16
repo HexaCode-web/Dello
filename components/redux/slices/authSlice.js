@@ -3,9 +3,7 @@ import { createSlice } from "@reduxjs/toolkit";
 //starter state
 const initialState = {
   isLoggedIn: false,
-  isOrgLoggedIn: false,
   user: null,
-  org: null,
   error: null,
 };
 
@@ -21,24 +19,18 @@ export const userSlice = createSlice({
       state.isLoggedIn = true;
       state.user = payload.payload;
     },
-    loginOrg: (state, payload) => {
-      state.isOrgLoggedIn = true;
-      state.org = payload.payload;
-    },
-    logoutOrg: (state) => {
-      state.isOrgLoggedIn = false;
-      state.org = null;
+
+    updateUserData: (state, payload) => {
+      state.user = { Token: state.user.Token, user: payload.payload };
     },
     logout: (state) => {
       state.isLoggedIn = false;
-      state.isOrgLoggedIn = false;
       state.user = null;
-      state.org = null;
     },
   },
 });
 
 // Export actions to be used in components
-export const { login, logout, loginOrg, logoutOrg } = userSlice.actions;
+export const { login, logout, updateUserData } = userSlice.actions;
 // Export the reducer to be added to the store
 export default userSlice.reducer;

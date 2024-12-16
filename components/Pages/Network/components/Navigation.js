@@ -12,9 +12,9 @@ const Navigation = () => {
   const [activeTab, setActiveTab] = useState("My Networks  2");
 
   const tabData = [
-    { id: "0", title: "My Networks  2" },
-    { id: "1", title: "Available Networks 0" },
-    { id: "2", title: "Joined Networks  2" },
+    { id: "0", title: "My Networks " },
+    { id: "1", title: "Available Networks" },
+    { id: "2", title: "Joined Networks" },
   ];
   const renderTabItem = ({ item }) => (
     <TouchableOpacity

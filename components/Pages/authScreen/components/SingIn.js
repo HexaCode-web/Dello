@@ -5,7 +5,7 @@ import {
   TouchableOpacity,
   TextInput,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { AUTH_API } from "@env";
 import AntDesign from "@expo/vector-icons/AntDesign";
@@ -16,13 +16,14 @@ import { COLORS, FONTS } from "../../../../theme";
 export default function SignIn({ setActivePage }) {
   const dispatch = useDispatch();
   const [location, error] = useGetLocation();
+
   const [activeInnerPage, setActiveInnerPage] = useState(0);
   const [userInfo, setUserInfo] = useState({
     Email: "",
     userName: "abc",
     Password: "",
   });
-
+  useEffect(() => {}, [userInfo]);
   const [errorInForm, setErrorInForm] = useState("");
   const onChangeEmail = (value) => {
     const username = value.split("@")[0]; // Get the part before '@'
@@ -47,37 +48,31 @@ export default function SignIn({ setActivePage }) {
   };
   const Login = async () => {
     try {
-      const config = {
-        method: "post",
-        url: `${AUTH_API}/auth/login`,
-
-        headers: {
-          "Accept-Language": "en",
-          "Content-Type": "application/json",
-        },
-        data: {
-          appType: "MOBILE",
-          contactInfo: userInfo.Email,
-          userName: userInfo.userName,
+      const response = await axios.post(
+        `${process.env.EXPO_PUBLIC_AUTH_API}/login`,
+        {
+          email: userInfo.Email,
           password: userInfo.Password,
           latitude: location.coords.latitude,
           longitude: location.coords.longitude,
         },
-      };
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-      const response = await axios(config);
-
-      if (response.status === 200) {
+      if (response.status === 201) {
         const UserData = {
           Token: response.data.token,
-          ID: response.data.userId,
-          userName: userInfo.userName,
+          ID: response.data.user._id,
+          userName: response.data.user.name,
+          user: { ...response.data.user },
         };
         dispatch(login(UserData));
         return true;
       } else {
-        console.log(response);
-
         setErrorInForm(
           response.data.message || "Unexpected error during Login"
         );
@@ -113,26 +108,21 @@ export default function SignIn({ setActivePage }) {
         />
       </TouchableOpacity>
       <View style={styles.textWrapper}>
-        <Text style={styles.Header}>Sign in</Text>
-        <Text style={styles.signUpPromptText}>
-          enter your email and username and password to sign in
-        </Text>
+        <Text style={styles.Header}>Sign In</Text>
       </View>
       <View style={styles.inputsWrapper}>
         {activeInnerPage == 0 && (
           <View style={styles.inputWrapper}>
-            <Text style={styles.signUpPromptText}>Email</Text>
             <TextInput
-              placeholder="Email"
               style={styles.input}
               onChangeText={onChangeEmail}
+              placeholder="Email"
               value={userInfo.Email}
             />
           </View>
         )}
         {activeInnerPage === 1 && (
           <View style={styles.inputWrapper}>
-            <Text style={styles.signUpPromptText}>Password</Text>
             <TextInput
               placeholder="Password"
               returnKeyType="go"
@@ -184,13 +174,13 @@ const styles = StyleSheet.create({
   },
   input: {
     height: 50,
-    width: 350,
+    width: 300,
     margin: 12,
     borderWidth: 1,
-    padding: 10,
     fontSize: FONTS.medium,
     fontFamily: FONTS.familyBold,
     borderRadius: 30,
+    paddingLeft: 20,
   },
   inputsWrapper: {
     flex: 1,
@@ -219,7 +209,7 @@ const styles = StyleSheet.create({
   signUpPromptText: {
     fontSize: FONTS.medium,
     fontFamily: FONTS.familyLight,
-
+    paddingLeft: 20,
     color: COLORS.textSecondary,
   },
   signUpPromptBtn: {

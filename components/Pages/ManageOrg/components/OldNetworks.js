@@ -8,26 +8,26 @@ import { COLORS, FONTS } from "../../../../theme";
 
 const { width } = Dimensions.get("window"); // Get screen width
 
-export default function OldNetworks() {
-  const Org = useSelector((state) => state.auth.org);
+export default function OldNetworks(OrgId) {
+  const User = useSelector((state) => state.auth.user);
+
   const [oldNetworks, setOldNetworks] = useState([]);
 
   const getAllNetworks = async () => {
     try {
       const config = {
         method: "get",
-        url: `${NETWORK_API}/network/get_all_network_by_organization/${Org.organizationId}`,
+        url: `${process.env.EXPO_PUBLIC_NETWORK_API}/getOrgNetworks/${OrgId.OrgId}`,
         headers: {
           "Accept-Language": "en",
           "Content-Type": "application/json",
-          Authorization: `Bearer ${Org.token}`,
+          Authorization: `Bearer ${User.token}`,
         },
       };
       const response = await axios(config);
-      setOldNetworks(response.data.dataList);
+      setOldNetworks(response.data);
     } catch (error) {
       if (error.message === "Request failed with status code 400") {
-        console.log("No Old Networks Found");
         setOldNetworks([]);
       }
       console.error(error.message);
@@ -42,7 +42,7 @@ export default function OldNetworks() {
       return () => {
         setOldNetworks([]);
       };
-    }, [Org])
+    }, [User])
   );
 
   const renderNetwork = ({ item }) => (

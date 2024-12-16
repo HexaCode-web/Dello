@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -10,22 +10,23 @@ import {
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Feather } from "@expo/vector-icons";
 import axios from "axios";
-import { useSelector } from "react-redux";
-import { PROFILE_API } from "@env";
+import { useDispatch, useSelector } from "react-redux";
 import { COLORS, FONTS } from "../../../../theme";
+import { updateUserData } from "../../../redux/slices/authSlice";
 
-const PresentRole = ({ data }) => {
+const PresentRole = ({ data, setActivePage }) => {
   const User = useSelector((state) => state.auth.user);
 
-  const [position, setPosition] = useState(data.positioName);
-  const [company, setCompany] = useState(data.presentRoleCompanyName);
+  const dispatch = useDispatch();
+  const [position, setPosition] = useState(data.Position);
+  const [company, setCompany] = useState(data.Company);
   const [date, setDate] = useState(
-    data.presentRoleStartedDate
-      ? new Date(data.presentRoleStartedDate)
-      : new Date()
+    data.StartDate ? new Date(data.StartDate) : new Date()
   );
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [error, setError] = useState();
+  const [saved, setSaved] = useState(false); // State to track saved status
+
   const onDateChange = (event, selectedDate) => {
     setShowDatePicker(false);
     if (selectedDate) {
@@ -33,18 +34,21 @@ const PresentRole = ({ data }) => {
     }
   };
   const savePresentRoleDetails = async () => {
+    setSaved(false);
     if (position == "" || company == "" || date == "") {
       setError("All fields are required");
       return;
     }
     setError("");
     try {
-      const response = await axios.post(
-        `${PROFILE_API}/present-role/save_present_role_details/${User.ID}`,
+      const response = await axios.put(
+        `${process.env.EXPO_PUBLIC_PROFILE_API}/presentRole/update/${User.user._id}`,
         {
-          positionName: position,
-          presentRoleCompanyName: company,
-          presentRoleStartedDate: date,
+          updatedPresentRole: {
+            Position: position,
+            Company: company,
+            StartDate: date,
+          },
         },
         {
           headers: {
@@ -56,7 +60,9 @@ const PresentRole = ({ data }) => {
         }
       );
       if (response.status === 200) {
-        setError("Saved");
+        dispatch(updateUserData(response.data.user));
+        Alert.alert("Saved", "Saved");
+        setSaved(true);
       }
     } catch (error) {
       console.log(error);
@@ -68,7 +74,7 @@ const PresentRole = ({ data }) => {
     <ScrollView style={styles.container}>
       <Text style={styles.label}>Position</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, saved && { color: COLORS.secondary }]}
         placeholder="Add the position"
         value={position}
         onChangeText={setPosition}
@@ -76,7 +82,7 @@ const PresentRole = ({ data }) => {
 
       <Text style={styles.label}>Company</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, saved && { color: COLORS.secondary }]}
         placeholder="Some text here..."
         value={company}
         onChangeText={setCompany}
@@ -85,7 +91,7 @@ const PresentRole = ({ data }) => {
       <Text style={styles.label}>When</Text>
       <View style={styles.datePickerContainer}>
         <TextInput
-          style={styles.input}
+          style={[styles.input, saved && { color: COLORS.secondary }]}
           placeholder="Some text here..."
           value={date.toDateString()}
           editable={false}
@@ -103,15 +109,24 @@ const PresentRole = ({ data }) => {
           onChange={onDateChange}
         />
       )}
-      {error && <Text style={styles.Error}>{error}</Text>}
 
       <View style={styles.buttonWrapper}>
+        <TouchableOpacity
+          onPress={async () => {
+            await savePresentRoleDetails();
+            setActivePage("BusinessDrivers");
+          }}
+          style={styles.DefaultButton}
+        >
+          <Text style={styles.buttonText}>Next</Text>
+        </TouchableOpacity>
         <TouchableOpacity
           onPress={savePresentRoleDetails}
           style={styles.DefaultButton}
         >
           <Text style={styles.buttonText}>Save</Text>
         </TouchableOpacity>
+        {error && <Text style={styles.Error}>{error}</Text>}
       </View>
     </ScrollView>
   );
