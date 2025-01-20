@@ -1,70 +1,63 @@
+import React, { useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   TextInput,
+  TouchableOpacity,
 } from "react-native";
-
-import React, { useState } from "react";
+import DropdownSlider from "../../../GeneralComponents/DropdownSlider";
 import { COLORS, FONTS } from "../../../../theme";
 
 export default function Screen0({
-  onChangeEmailFunction,
   userInfo,
+  onChangeOrgName,
   setActiveInnerPage,
   setErrorInForm,
+  setOrgType,
+  onChangeOrgOfficeName,
 }) {
-  const [isValidEmail, setIsValidEmail] = useState(true);
+  const typeData = [
+    "Financial Services",
+    "Software Services",
+    "Legal Services",
+    "Sports Services",
+  ];
 
-  const validateEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    // List of common free email domains
-    const freeEmailDomains = [
-      "gmail.com",
-      "yahoo.com",
-      "outlook.com",
-      "hotmail.com",
-      "aol.com",
-      "icloud.com",
-      "mail.com",
-      "protonmail.com",
-    ];
-
-    // Extract the domain part of the email
-    const domain = email.split("@")[1];
-
-    // Check if the email is valid and not from a free domain
-    return emailRegex.test(email) && !freeEmailDomains.includes(domain);
-  };
-
-  const handleEmailChange = (input) => {
-    onChangeEmailFunction(input);
-    setIsValidEmail(validateEmail(input)); // Update validation status
-  };
   return (
     <>
-      <View style={styles.textWrapper}></View>
       <View style={styles.inputsWrapper}>
         <View style={styles.inputWrapper}>
           <TextInput
             style={styles.input}
-            onChangeText={(value) => handleEmailChange(value)}
-            value={userInfo.orgEmailId}
-            placeholder="Organization Email"
+            onChangeText={(value) => onChangeOrgName(value)}
+            value={userInfo.orgName}
+            placeholder="Organization name"
           />
         </View>
+        <View style={styles.inputWrapper}>
+          <TextInput
+            style={styles.input}
+            onChangeText={(value) => onChangeOrgOfficeName(value)}
+            value={userInfo.officeName}
+            placeholder="Organization Office Name"
+          />
+        </View>
+        <DropdownSlider
+          data={typeData}
+          placeholder={userInfo.type ? userInfo.type : "Select Type"}
+          onSelect={(item) => setOrgType(item)}
+        />
       </View>
       <View style={styles.buttonWrapper}>
         <TouchableOpacity
           onPress={() => {
-            if (isValidEmail && userInfo.orgEmailId != "") {
-              setActiveInnerPage(3);
-              setErrorInForm("");
-            } else {
-              setErrorInForm("must be a professional email address");
+            if (userInfo.orgName.length === 0) {
+              setErrorInForm("Organization name is required");
+              return;
             }
+            setActiveInnerPage(1);
+            setErrorInForm("");
           }}
           style={styles.DefaultButton}
         >
@@ -74,10 +67,14 @@ export default function Screen0({
     </>
   );
 }
+
 const styles = StyleSheet.create({
   inputWrapper: {
     display: "flex",
     flexDirection: "column",
+  },
+  inputsWrapper: {
+    flex: 1,
   },
   input: {
     height: 50,
@@ -87,33 +84,23 @@ const styles = StyleSheet.create({
     padding: 10,
     fontSize: FONTS.medium,
     fontFamily: FONTS.familyBold,
+
     borderRadius: 30,
   },
-  inputsWrapper: {
-    flex: 1,
-    width: "90%",
+  Header: {
+    width: "100%",
+    fontSize: FONTS.large,
+    fontFamily: FONTS.familyBold,
+    marginBottom: 10,
   },
   textWrapper: {
     marginBottom: 20,
-    marginLeft: 5,
+    marginLeft: 40,
     display: "flex",
     justifyContent: "flex-start",
     alignItems: "flex-start",
+    width: "100%",
     gap: 10,
-    width: "90%",
-  },
-  Header: {
-    fontSize: FONTS.large,
-    fontFamily: FONTS.familyBold,
-    marginRight: "auto",
-  },
-  signUpPrompt: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 10,
-    marginBottom: 10,
   },
   signUpPromptText: {
     fontSize: FONTS.medium,
@@ -121,15 +108,8 @@ const styles = StyleSheet.create({
 
     color: COLORS.textSecondary,
   },
-  signUpPromptBtn: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    textAlign: "center",
-  },
-
   buttonWrapper: {
-    width: "90%",
+    width: "100%",
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 10,
@@ -152,11 +132,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.8,
     shadowRadius: 2,
     elevation: 2,
-  },
-  buttonTextEmpty: {
-    fontSize: FONTS.medium,
-    fontFamily: FONTS.familyBold,
-    color: COLORS.secondary,
   },
   buttonText: {
     fontSize: FONTS.medium,

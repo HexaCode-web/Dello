@@ -6,8 +6,10 @@ import Header from "./components/Header";
 import Body from "./components/Body";
 export default function HomeScreen() {
   const tabsAr = [
+    { Name: "Security", Page: "Security" },
     { Name: "Profile", Page: "Profile" },
-    { Name: "Organizations", Page: "ManageOrg" },
+    { Name: "Profiles", Page: "Profiles" },
+    { Name: "Organisation", Page: "Organizations" },
   ];
 
   return (
@@ -21,10 +23,11 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "white",
+    backgroundColor: "#F5FCFF",
+
     alignItems: "center",
-    paddingTop: 40,
-    paddingBottom: 50,
+    paddingTop: 20,
+    paddingBottom: 20,
     justifyContent: "space-between",
     color: "black",
   },

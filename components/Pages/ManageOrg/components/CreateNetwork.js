@@ -4,17 +4,22 @@ import { useState } from "react";
 import { Text, View, StyleSheet, TextInput } from "react-native";
 import { COLORS, FONTS } from "../../../../theme";
 import { TouchableOpacity } from "react-native";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Feather } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { NETWORK_API } from "@env";
 
 import { useGetLocation } from "../../../hooks/getLocation";
-import DropdownInput from "../../../GeneralComponents/DropdownInput";
-export default function CreateNetwork({ userId, orgId }) {
-  const User = useSelector((state) => state.auth.user);
 
+import DropdownInput from "../../../GeneralComponents/DropdownInput";
+import { updateUserData } from "../../../redux/slices/authSlice";
+import { useNavigation } from "@react-navigation/native";
+export default function CreateNetwork({ orgId, setMainActivePage }) {
+  const dispatch = useDispatch();
+  const User = useSelector((state) => state.auth.user);
+  const navigate = useNavigation();
   const [activePage, setActivePage] = useState(0);
+  console.log(activePage);
+
   const [errorInForm, setErrorInForm] = useState("");
   const [location, error] = useGetLocation();
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -25,10 +30,11 @@ export default function CreateNetwork({ userId, orgId }) {
     endDate: new Date(),
     type: "",
     size: 0,
-    adminId: userId,
+    adminId: User.user._id,
     orgId: orgId,
     latitude: location?.coords.latitude,
     longitude: location?.coords.longitude,
+    radius: 100,
   });
 
   const handleInputChange = (key, value) => {
@@ -61,9 +67,12 @@ export default function CreateNetwork({ userId, orgId }) {
       setErrorInForm("Network type is required.");
       return false;
     }
-
-    if (activePage === 5 && !network.size) {
+    if (activePage === 4 && !network.size) {
       setErrorInForm("size condition is required.");
+      return false;
+    }
+    if (activePage === 5 && !network.radius) {
+      setErrorInForm("radius condition is required.");
       return false;
     }
     setErrorInForm("");
@@ -72,8 +81,9 @@ export default function CreateNetwork({ userId, orgId }) {
 
   const Continue = () => {
     if (validatePage()) {
-      if (activePage === 4) {
+      if (activePage === 5) {
         createNetwork();
+        setMainActivePage(0);
       } else {
         setActivePage((prev) => prev + 1);
       }
@@ -92,16 +102,26 @@ export default function CreateNetwork({ userId, orgId }) {
           },
         }
       );
+
+      dispatch(updateUserData(response.data.user));
+
       Alert.alert("Success", "Network created successfully.");
+      navigate.navigate("Home");
     } catch (error) {
       console.error(error);
+      console.log(error);
+
       Alert.alert("Error", "Failed to create the network.");
     }
   };
   const onDateChange = (event, selectedDate) => {
     setShowDatePicker(false);
     if (selectedDate) {
-      setNetwork((prev) => ({ ...prev, startDate: selectedDate }));
+      setNetwork((prev) => ({
+        ...prev,
+        startDate: selectedDate,
+        endDate: selectedDate,
+      }));
     }
   };
   const onDateChangeEnd = (event, selectedDate) => {
@@ -115,7 +135,6 @@ export default function CreateNetwork({ userId, orgId }) {
       <View style={styles.inputsWrapper}>
         {activePage === 0 && (
           <View style={styles.inputWrapper}>
-            <Text style={styles.signUpPromptText}>Network Name</Text>
             <TextInput
               placeholder="Network Name"
               value={network.name}
@@ -186,11 +205,20 @@ export default function CreateNetwork({ userId, orgId }) {
 
         {activePage === 4 && (
           <View style={styles.inputWrapper}>
-            <Text style={styles.signUpPromptText}>Size</Text>
             <TextInput
-              placeholder="network size"
+              placeholder="Network size"
               value={network.size}
               onChangeText={(text) => handleInputChange("size", text)}
+              style={styles.input}
+            />
+          </View>
+        )}
+        {activePage === 5 && (
+          <View style={styles.inputWrapper}>
+            <TextInput
+              placeholder="Network radius"
+              value={network.radius}
+              onChangeText={(text) => handleInputChange("radius", text)}
               style={styles.input}
             />
           </View>
@@ -199,7 +227,7 @@ export default function CreateNetwork({ userId, orgId }) {
       <View style={styles.buttonWrapper}>
         <TouchableOpacity onPress={Continue} style={styles.DefaultButton}>
           <Text style={styles.buttonText}>
-            {activePage === 4 ? "Create Network" : "Continue"}
+            {activePage === 5 ? "Create Network" : "Continue"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -211,7 +239,8 @@ export default function CreateNetwork({ userId, orgId }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "white",
+    backgroundColor: "#F5FCFF",
+
     alignItems: "center",
   },
   Error: {
@@ -226,7 +255,7 @@ const styles = StyleSheet.create({
     top: 40,
     left: 10,
     padding: 10,
-    backgroundColor: "white",
+    backgroundColor: "#F5FCFF",
   },
   inputWrapper: {
     display: "flex",
@@ -293,8 +322,8 @@ const styles = StyleSheet.create({
     height: 60,
     display: "flex",
     justifyContent: "center",
-    flexDirection: "row",
     alignItems: "center",
+    textAlign: "center",
     marginBottom: 10,
     paddingHorizontal: 10,
     backgroundColor: COLORS.secondary,
@@ -303,6 +332,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.8,
     shadowRadius: 2,
     elevation: 2,
+    marginTop: "auto",
+    minWidth: "90%",
   },
 
   buttonText: {

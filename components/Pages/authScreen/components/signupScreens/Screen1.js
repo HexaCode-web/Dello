@@ -4,23 +4,22 @@ import {
   StyleSheet,
   TouchableOpacity,
   TextInput,
+  ScrollView,
+  Alert,
 } from "react-native";
 import { COLORS, FONTS } from "../../../../../theme";
 export default function Screen1({
   userInfo,
   onChangePassword,
   onChangeConfirmPassword,
-  setActiveInnerPage,
-  setErrorInForm,
+  navigation,
 }) {
   return (
-    <>
-      <View style={styles.textWrapper}>
-        <Text style={styles.Header}>Create Password</Text>
-      </View>
+    <ScrollView>
+      <Text style={styles.Header}>Create Password</Text>
+
       <View style={styles.inputsWrapper}>
         <View style={styles.inputWrapper}>
-          <Text style={styles.signUpPromptText}>Password</Text>
           <TextInput
             placeholder="Password"
             returnKeyType="go"
@@ -32,9 +31,8 @@ export default function Screen1({
           />
         </View>
         <View style={styles.inputWrapper}>
-          <Text style={styles.signUpPromptText}>Confirm Password</Text>
           <TextInput
-            placeholder="Password"
+            placeholder="Confirm Password"
             returnKeyType="go"
             secureTextEntry
             autoCorrect={false}
@@ -48,14 +46,13 @@ export default function Screen1({
         <TouchableOpacity
           onPress={() => {
             if (userInfo.Password.length < 8) {
-              setErrorInForm("Password must be at least 8 characters long");
+              Alert.alert("Password must be at least 8 characters long");
               return;
             }
             if (userInfo.ConfirmPassword === userInfo.Password) {
-              setActiveInnerPage(2);
-              setErrorInForm("");
+              navigation.navigate("Signup", { screen: "Screen2" });
             } else {
-              setErrorInForm("passwords do not match");
+              Alert.alert("passwords do not match");
             }
           }}
           style={styles.DefaultButton}
@@ -63,7 +60,7 @@ export default function Screen1({
           <Text style={styles.buttonText}>Continue</Text>
         </TouchableOpacity>
       </View>
-    </>
+    </ScrollView>
   );
 }
 const styles = StyleSheet.create({
@@ -87,6 +84,8 @@ const styles = StyleSheet.create({
   Header: {
     fontSize: FONTS.large,
     fontFamily: FONTS.familyBold,
+    marginBottom: 20,
+    marginLeft: 40,
   },
 
   signUpPromptText: {

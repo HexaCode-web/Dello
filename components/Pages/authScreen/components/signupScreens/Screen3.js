@@ -2,7 +2,12 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import CodeInput from "./CodeInput";
 import { COLORS, FONTS } from "../../../../../theme";
 
-export default function Screen3({ sendOTP, onChangeOTP, finalizeSignUp }) {
+export default function Screen3({
+  sendOTP,
+  onChangeOTP,
+  finalizeSignUp,
+  navigation,
+}) {
   return (
     <>
       <View style={styles.textWrapper}>

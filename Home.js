@@ -8,10 +8,8 @@ import Feather from "@expo/vector-icons/Feather";
 import { StatusBar } from "expo-status-bar";
 import Profile from "./components/Pages/Profile/Profile";
 import Settings from "./components/Pages/Settings/Settings";
-import * as SplashScreen from "expo-splash-screen"; // Import splash screen
-
+import * as SplashScreen from "expo-splash-screen";
 const Tab = createBottomTabNavigator();
-
 import {
   useFonts,
   Montserrat_500Medium,
@@ -20,22 +18,24 @@ import {
 import { FONTS } from "./theme";
 import Network from "./components/Pages/Network/Network";
 import CreateOrg from "./components/Pages/CreateOrg/CreateOrg";
-import ManageOrg from "./components/Pages/ManageOrg/ManageOrg";
-
-// Prevent the splash screen from auto-hiding
+import Organizations from "./components/Pages/ManageOrg/ManageOrg";
+import ManageNetwork from "./components/Pages/ManageNetwork/ManageNetwork";
+import Octicons from "@expo/vector-icons/Octicons";
+import ViewProfile from "./components/Pages/ViewProfile/ViewProfile";
+import ChatBot from "./components/Pages/ChatBot/ChatBot";
 SplashScreen.preventAutoHideAsync();
-
+import AntDesign from "@expo/vector-icons/AntDesign";
+import Security from "./components/Pages/Security/Security";
+import Profiles from "./components/Pages/Profiles/Profiles";
 export default function Home() {
   // Load Google Fonts
   let [fontsLoaded] = useFonts({
     Montserrat_500Medium,
     Montserrat_700Bold,
   });
-  console.log(User);
 
   // Check if the user is logged in
   const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
-  const User = useSelector((state) => state.auth.user);
   // Use useEffect to hide the splash screen when fonts are loaded
   useEffect(() => {
     const hideSplashScreen = async () => {
@@ -59,12 +59,10 @@ export default function Home() {
       {isLoggedIn ? (
         <Tab.Navigator
           screenOptions={{
-            headerShown: false, // Hides headers for all screens
-            tabBarActiveTintColor: "tomato",
+            headerShown: false,
+            tabBarShowLabel: false,
+            tabBarActiveTintColor: "purple",
             tabBarInactiveTintColor: "gray",
-            tabBarLabelStyle: {
-              fontSize: FONTS.small,
-            },
           }}
         >
           <Tab.Screen
@@ -75,10 +73,35 @@ export default function Home() {
                 <Feather
                   name="home"
                   size={25}
-                  color={focused ? "tomato" : "gray"}
+                  color={focused ? "purple" : "gray"}
                 />
               ),
             }}
+          />
+          <Tab.Screen
+            name="Chat Bot"
+            component={ChatBot}
+            options={{
+              tabBarIcon: ({ focused }) => (
+                <AntDesign name="message1" size={24} color="black" />
+              ),
+            }}
+          />
+
+          <Tab.Screen
+            name="Profile"
+            component={Profile}
+            options={{ tabBarItemStyle: { display: "none" } }} // Hide item from tabBar
+          />
+          <Tab.Screen
+            name="ViewProfile"
+            component={ViewProfile}
+            options={{ tabBarItemStyle: { display: "none" } }} // Hide item from
+          />
+          <Tab.Screen
+            name="CreateOrg"
+            component={CreateOrg}
+            options={{ tabBarItemStyle: { display: "none" } }} // Hide item from tabBar
           />
           <Tab.Screen
             name="Network"
@@ -88,48 +111,45 @@ export default function Home() {
                 <Feather
                   name="search"
                   size={25}
-                  color={focused ? "tomato" : "gray"}
+                  color={focused ? "purple" : "gray"}
                 />
               ),
             }}
           />
           <Tab.Screen
-            name="Profile"
-            component={Profile}
+            name="Organizations"
+            component={Organizations}
             options={{
               tabBarIcon: ({ focused }) => (
-                <Feather
-                  name="user"
+                <Octicons
+                  name="organization"
                   size={25}
-                  color={focused ? "tomato" : "gray"}
+                  color={focused ? "purple" : "gray"}
                 />
               ),
             }}
-          />
-          <Tab.Screen
-            name="CreateOrg"
-            component={CreateOrg}
-            options={{ tabBarItemStyle: { display: "none" } }} // Hide item from tabBar
           />
 
           <Tab.Screen
-            name="ManageOrg"
-            component={ManageOrg}
+            name="NetworkDetails"
+            component={ManageNetwork}
             options={{ tabBarItemStyle: { display: "none" } }} // Hide item from tabBar
           />
 
           <Tab.Screen
             name="Settings"
             component={Settings}
-            options={{
-              tabBarIcon: ({ focused }) => (
-                <Feather
-                  name="settings"
-                  size={25}
-                  color={focused ? "tomato" : "gray"}
-                />
-              ),
-            }}
+            options={{ tabBarItemStyle: { display: "none" } }} // Hide item from tabBar
+          />
+          <Tab.Screen
+            name="Security"
+            component={Security}
+            options={{ tabBarItemStyle: { display: "none" } }} // Hide item from tabBar
+          />
+          <Tab.Screen
+            name="Profiles"
+            component={Profiles}
+            options={{ tabBarItemStyle: { display: "none" } }} // Hide item from tabBar
           />
         </Tab.Navigator>
       ) : (

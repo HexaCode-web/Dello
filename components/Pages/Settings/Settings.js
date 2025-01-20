@@ -1,27 +1,29 @@
-import { View, StyleSheet, Text, TouchableOpacity, Image } from "react-native";
-import Ionicons from "@expo/vector-icons/Ionicons";
-import TopBar from "./components/TopBar";
-import react, { useCallback, useEffect, useState } from "react";
+import {
+  View,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  Alert,
+  ScrollView,
+} from "react-native";
+import { useCallback, useState } from "react";
 import PresentRole from "./components/PresentRole";
 import BusinessDrivers from "./components/BusinessDrivers";
 import HighLights from "./components/HighLights";
 import Skills from "./components/Skills";
 import PreviousRoles from "./components/PreviousRoles";
 import Education from "./components/Education";
-import { COLORS, FONTS } from "../../../theme";
 import { useSelector } from "react-redux";
 import { useFocusEffect } from "@react-navigation/native";
 import ImmediateNeeds from "./components/ImmediateNeeds";
+import { createStackNavigator } from "@react-navigation/stack";
+import { useNavigation } from "@react-navigation/native";
+import ChangeName from "./components/ChangeName";
+import SettingSection from "../../GeneralComponents/SettingSection";
+import TopBar from "../../GeneralComponents/TopBar";
+const settingsStack = createStackNavigator();
 export default function Settings() {
-  const activeSettingsPage = useSelector((state) => state.activeSettingsPage);
-
-  const [showMenu, setShowMenu] = react.useState(false);
-  const [activePage, setActivePage] = react.useState(
-    activeSettingsPage.activePage
-  );
-  useEffect(() => {
-    setActivePage(activeSettingsPage.activePage);
-  }, [activeSettingsPage.activePage]);
+  const navigation = useNavigation();
 
   const User = useSelector((state) => state.auth.user);
   const [data, setData] = useState({
@@ -46,130 +48,222 @@ export default function Settings() {
     }, [User])
   );
 
-  const Tabs = [
-    { name: "Present Role", Page: "PresentRole" },
-    { name: "Business Drivers", Page: "BusinessDrivers" },
-    { name: "Highlights ", Page: "Highlights" },
-    { name: "Skills", Page: "Skills" },
-    { name: "Previous Roles", Page: "PreviousRoles" },
-    { name: "Education ", Page: "Education" },
-    { name: "Immediate Need ", Page: "ImmediateNeeds" },
-  ];
-
-  const renderTabs = Tabs.map((Tab) => {
-    return (
-      <TouchableOpacity
-        style={styles.signUpPromptBtn}
-        onPress={() => {
-          setShowMenu(false), setActivePage(Tab.Page);
-        }}
-      >
-        <Text style={styles.buttonTextEmpty}>{Tab.name}</Text>
-      </TouchableOpacity>
-    );
-  });
   return (
-    <View style={styles.container}>
-      <TopBar activePage={activePage} setActivePage={setActivePage} />
-      <View style={styles.settings}>
-        <View style={styles.addButtonStyles}>
-          <TouchableOpacity
-            onPress={() => {
-              setShowMenu((prev) => !prev);
-            }}
-          >
-            <Ionicons
-              name="add-circle-outline"
-              size={60}
-              color={COLORS.secondary}
+    <settingsStack.Navigator
+      screenOptions={{
+        headerShown: false,
+        headerStyle: styles.return,
+        cardStyle: styles.container,
+      }}
+      initialRouteName="Main"
+      detachInactiveScreens={true}
+    >
+      {/* Main Settings Screen */}
+      <settingsStack.Screen name="Main" component={Main} />
+
+      {/* <settingsStack.Screen
+        name="Change Email"
+        options={({ navigation, route }) => ({
+          headerShown: true,
+          title: "",
+          headerLeft: () => <TopBar title={route.name} />, // Dynamic title based on screen name
+        })}
+      >
+        {(props) => <ChangeEmail {...props} navigation={navigation} />}
+      </settingsStack.Screen> */}
+      {/* Present Role Screen */}
+      <settingsStack.Screen
+        name="Present Role"
+        options={({ navigation, route }) => ({
+          headerShown: true,
+          title: "",
+          headerLeft: () => (
+            <TopBar
+              Title={route.name}
+              returnTarget={{ name: "Profile" }}
+              hasReturnButton={true}
             />
-          </TouchableOpacity>
-          <Text style={styles.currentTab}>
-            {Tabs.find((tab) => tab.Page === activePage)?.name}
-          </Text>
-          {showMenu && <View style={styles.dropDown}>{renderTabs}</View>}
-        </View>
-      </View>
-      {activePage === "PresentRole" && (
-        <PresentRole data={data.presentRole} setActivePage={setActivePage} />
-      )}
-      {activePage === "BusinessDrivers" && (
-        <BusinessDrivers setActivePage={setActivePage} />
-      )}
-      {activePage === "Highlights" && (
-        <HighLights setActivePage={setActivePage} />
-      )}
-      {activePage === "Skills" && <Skills setActivePage={setActivePage} />}
-      {activePage === "PreviousRoles" && (
-        <PreviousRoles setActivePage={setActivePage} />
-      )}
-      {activePage === "Education" && (
-        <Education setActivePage={setActivePage} />
-      )}
-      {activePage === "ImmediateNeeds" && (
-        <ImmediateNeeds setActivePage={setActivePage} />
-      )}
-    </View>
+          ),
+        })}
+      >
+        {(props) => (
+          <PresentRole
+            {...props}
+            data={data.presentRole}
+            navigation={navigation}
+          />
+        )}
+      </settingsStack.Screen>
+
+      {/* Business Drivers Screen */}
+      <settingsStack.Screen
+        name="Business Drivers"
+        options={({ navigation, route }) => ({
+          headerShown: true,
+          title: "",
+          headerLeft: () => (
+            <TopBar
+              Title={route.name}
+              returnTarget={{ name: "Profile" }}
+              hasReturnButton={true}
+            />
+          ), // Dynamic title
+        })}
+      >
+        {(props) => <BusinessDrivers {...props} navigation={navigation} />}
+      </settingsStack.Screen>
+
+      {/* Highlights Screen */}
+      <settingsStack.Screen
+        name="Highlights"
+        options={({ navigation, route }) => ({
+          headerShown: true,
+          title: "",
+          headerLeft: () => (
+            <TopBar
+              Title={route.name}
+              returnTarget={{ name: "Profile" }}
+              hasReturnButton={true}
+            />
+          ), // Dynamic title
+        })}
+      >
+        {(props) => <HighLights {...props} navigation={navigation} />}
+      </settingsStack.Screen>
+
+      {/* Skills Screen */}
+      <settingsStack.Screen
+        name="Skills"
+        options={({ navigation, route }) => ({
+          headerShown: true,
+          title: "",
+          headerLeft: () => (
+            <TopBar
+              Title={route.name}
+              returnTarget={{ name: "Profile" }}
+              hasReturnButton={true}
+            />
+          ), // Dynamic title
+        })}
+      >
+        {(props) => <Skills {...props} navigation={navigation} />}
+      </settingsStack.Screen>
+
+      {/* Previous Roles Screen */}
+      <settingsStack.Screen
+        name="Previous Roles"
+        options={({ navigation, route }) => ({
+          headerShown: true,
+          title: "",
+          headerLeft: () => (
+            <TopBar
+              Title={route.name}
+              returnTarget={{ name: "Profile" }}
+              hasReturnButton={true}
+            />
+          ), // Dynamic title
+        })}
+      >
+        {(props) => <PreviousRoles {...props} navigation={navigation} />}
+      </settingsStack.Screen>
+
+      {/* Education Screen */}
+      <settingsStack.Screen
+        name="Education"
+        options={({ navigation, route }) => ({
+          headerShown: true,
+          title: "",
+          headerLeft: () => (
+            <TopBar
+              Title={route.name}
+              returnTarget={{ name: "Profile" }}
+              hasReturnButton={true}
+            />
+          ), // Dynamic title
+        })}
+      >
+        {(props) => <Education {...props} navigation={navigation} />}
+      </settingsStack.Screen>
+
+      {/* Immediate Needs Screen */}
+      <settingsStack.Screen
+        name="Immediate Need"
+        options={({ navigation, route }) => ({
+          headerShown: true,
+          title: "",
+          headerLeft: () => (
+            <TopBar
+              Title={route.name}
+              returnTarget={{ name: "Profile" }}
+              hasReturnButton={true}
+            />
+          ), // Dynamic title
+        })}
+      >
+        {(props) => <ImmediateNeeds {...props} navigation={navigation} />}
+      </settingsStack.Screen>
+    </settingsStack.Navigator>
   );
 }
+const Main = () => {
+  const navigation = useNavigation();
 
+  const Tabs = [
+    "Present Role",
+    "Business Drivers",
+    "Highlights",
+    "Skills",
+    "Previous Roles",
+    "Education",
+    "Immediate Need",
+  ];
+
+  const renderTabs = (Tabs) => {
+    return Tabs.map((tab, index) => {
+      const onPress = () => {
+        navigation.navigate(tab);
+      };
+      return (
+        <SettingSection
+          key={index}
+          title={tab === "Present Role" ? `Edit ${tab}` : `Configure ${tab}`}
+          onPress={onPress}
+        />
+      );
+    });
+  };
+
+  return (
+    <ScrollView style={styles.settingsContainer}>
+      <TopBar
+        Title="Settings"
+        returnTarget={{ name: "Profiles" }}
+        hasReturnButton={true}
+      />
+
+      {renderTabs(Tabs)}
+    </ScrollView>
+  );
+};
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "white",
-    alignItems: "center",
-    paddingTop: 40,
-    paddingBottom: 50,
-    justifyContent: "flex-start",
-    color: "black",
+    backgroundColor: "#F5FCFF",
+
+    paddingTop: 20,
   },
-  settings: {
-    padding: 30,
-    width: "100%",
-    display: "flex",
-    justifyContent: "flex-start",
-    alignItems: "flex-start",
-  },
-  currentTab: {
-    fontSize: FONTS.largeHeader,
-    textAlign: "left",
-    width: "90%",
-    fontFamily: FONTS.familyBold,
-    color: COLORS.secondary,
-  },
-  addButtonStyles: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 10,
-    marginBottom: 20,
-  },
-  dropDown: {
-    zIndex: 9990,
-    position: "absolute",
-    top: 60,
-    left: 30,
-    padding: 30,
-    borderRadius: 15,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 2,
-    elevation: 5,
-    display: "flex",
-    gap: 30,
-    backgroundColor: "white",
-  },
-  signUpPromptBtn: {
+  settingsContainer: {
+    width: "100%", // Ensure full width of the parent container
     display: "flex",
 
-    textAlign: "left",
+    backgroundColor: "#F5FCFF",
+    // Ensure consistent background
   },
-  buttonTextEmpty: {
-    fontSize: FONTS.medium,
-    textAlign: "left",
-    fontFamily: FONTS.familyBold,
-    color: COLORS.secondary,
+  return: {
+    shadowColor: "white",
+  },
+
+  deleteText: {
+    color: "#FF3B30",
   },
 });

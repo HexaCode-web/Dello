@@ -2,9 +2,7 @@ import { View, StyleSheet, Text, TouchableOpacity, Image } from "react-native";
 import { useSelector } from "react-redux";
 import { FONTS } from "../../../../theme";
 
-export default function Header() {
-  const User = useSelector((state) => state.auth.user);
-
+export default function Header({ User }) {
   return (
     <View style={styles.header}>
       <Image
@@ -12,8 +10,12 @@ export default function Header() {
         style={styles.profilePic}
       />
       <View>
-        <Text style={styles.userName}>{User.user.FirstName}</Text>
-        <Text style={styles.userName}>{User.user.LastName}</Text>
+        <Text style={styles.userName}>
+          {User.FirstName || User.user.FirstName}
+        </Text>
+        <Text style={styles.userName}>
+          {User.LastName || User.user.LastName}
+        </Text>
       </View>
     </View>
   );

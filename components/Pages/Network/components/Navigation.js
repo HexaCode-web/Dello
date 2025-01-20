@@ -8,14 +8,14 @@ import {
 } from "react-native";
 import { FONTS } from "../../../../theme";
 
-const Navigation = () => {
-  const [activeTab, setActiveTab] = useState("My Networks  2");
-
+const Navigation = ({ activeTab, setActiveTab }) => {
   const tabData = [
-    { id: "0", title: "My Networks " },
-    { id: "1", title: "Available Networks" },
-    { id: "2", title: "Joined Networks" },
+    { id: "1", title: "Available" },
+    { id: "2", title: "Member" },
+    { id: "3", title: "Pending" },
+    { id: "4", title: "Dismissed" },
   ];
+
   const renderTabItem = ({ item }) => (
     <TouchableOpacity
       style={[styles.tab, activeTab === item.title && styles.activeTab]}
@@ -31,6 +31,7 @@ const Navigation = () => {
       </Text>
     </TouchableOpacity>
   );
+
   return (
     <FlatList
       data={tabData}
@@ -43,7 +44,6 @@ const Navigation = () => {
     />
   );
 };
-
 const styles = StyleSheet.create({
   tabContainer: {
     maxHeight: 70,

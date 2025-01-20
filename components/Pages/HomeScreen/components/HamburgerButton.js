@@ -13,14 +13,14 @@ const HamburgerButton = ({ onPress }) => {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 10, // Adds spacing around the icon for better touchability
+    padding: 10,
   },
   line: {
-    width: 30, // Width of the hamburger lines
-    height: 3, // Thickness of the lines
-    backgroundColor: "black", // Color of the lines
-    marginVertical: 4, // Spacing between the lines
-    borderRadius: 2, // Slight rounding on the edges of the lines
+    width: 25,
+    height: 3,
+    backgroundColor: "black",
+    marginVertical: 2,
+    borderRadius: 2,
   },
 });
 

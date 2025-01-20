@@ -20,7 +20,7 @@ import { COLORS, FONTS } from "../../../../theme";
 import { updateUserData } from "../../../redux/slices/authSlice";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
-const Education = ({ setActivePage }) => {
+const Education = ({ navigation }) => {
   const User = useSelector((state) => state.auth.user);
   const dispatch = useDispatch();
 
@@ -33,7 +33,6 @@ const Education = ({ setActivePage }) => {
   const [saved, setSaved] = useState(false); // State to track saved status
   const [isModalVisible, setModalVisible] = useState(false);
   const [activeEducation, setActiveEducation] = useState(null);
-  console.log(activeEducation);
 
   const hideModal = () => {
     setActiveEducation(null);
@@ -196,7 +195,7 @@ const Education = ({ setActivePage }) => {
           <FontAwesome6
             name="edit"
             size={24}
-            color={COLORS.primary}
+            color={COLORS.secondary}
             style={styles.icon}
             onPress={() => {
               showModal(item);
@@ -211,7 +210,7 @@ const Education = ({ setActivePage }) => {
           <Ionicons
             name="trash-outline"
             size={24}
-            color={COLORS.primary}
+            color={COLORS.secondary}
             style={styles.icon}
           />
         </TouchableOpacity>
@@ -242,7 +241,7 @@ const Education = ({ setActivePage }) => {
           onChangeText={setDegreeName}
         />
 
-        <Text style={styles.label}>institution</Text>
+        <Text style={styles.label}>Institution</Text>
         <TextInput
           style={[styles.input, saved && { color: COLORS.secondary }]}
           value={instituteName}
@@ -310,7 +309,7 @@ const Education = ({ setActivePage }) => {
           <TouchableOpacity
             onPress={async () => {
               await savePresentRoleDetails();
-              setActivePage("ImmediateNeeds");
+              navigation.navigate("Settings", { screen: "Immediate Need" });
             }}
             style={styles.DefaultButton}
           >
@@ -401,7 +400,8 @@ const styles = StyleSheet.create({
   container: {
     width: "95%",
     padding: 20,
-    backgroundColor: "white",
+    backgroundColor: "#F5FCFF",
+
     gap: 20,
     margin: 10,
     marginVertical: 30,
@@ -413,7 +413,8 @@ const styles = StyleSheet.create({
   title: {
     position: "absolute",
     top: -25,
-    backgroundColor: "white",
+    backgroundColor: "#F5FCFF",
+
     left: 10,
     textAlign: "center",
     color: COLORS.secondary,
@@ -431,7 +432,8 @@ const styles = StyleSheet.create({
   modalContent: {
     width: "80%",
     padding: 20,
-    backgroundColor: "white",
+    backgroundColor: "#F5FCFF",
+
     borderRadius: 10,
     alignItems: "center",
   },

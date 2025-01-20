@@ -7,24 +7,54 @@ import {
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { AUTH_API } from "@env";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { useGetLocation } from "../../../hooks/getLocation";
 import { useDispatch } from "react-redux";
 import { login } from "../../../redux/slices/authSlice";
 import { COLORS, FONTS } from "../../../../theme";
-export default function SignIn({ setActivePage }) {
+import { useNavigation } from "@react-navigation/native";
+import { createStackNavigator } from "@react-navigation/stack";
+const LoginStack = createStackNavigator();
+import * as SecureStore from "expo-secure-store";
+import Fontisto from "@expo/vector-icons/Fontisto";
+
+// Add this function for saving data
+async function saveToSecureStore(key, value) {
+  await SecureStore.setItemAsync(key, value);
+}
+
+// Add this function for retrieving data
+async function getFromSecureStore(key) {
+  return await SecureStore.getItemAsync(key);
+}
+
+export default function SignIn() {
+  const navigation = useNavigation();
   const dispatch = useDispatch();
   const [location, error] = useGetLocation();
 
-  const [activeInnerPage, setActiveInnerPage] = useState(0);
   const [userInfo, setUserInfo] = useState({
     Email: "",
-    userName: "abc",
+    userName: "",
     Password: "",
   });
-  useEffect(() => {}, [userInfo]);
+
+  const [rememberMe, setRememberMe] = useState(false);
+  const [savedCredentials, setSavedCredentials] = useState(null);
   const [errorInForm, setErrorInForm] = useState("");
+
+  useEffect(() => {
+    // Load saved credentials when the screen loads
+    const loadCredentials = async () => {
+      const email = await getFromSecureStore("email");
+      const password = await getFromSecureStore("password");
+      if (email && password) {
+        setSavedCredentials({ email, password });
+      }
+    };
+    loadCredentials();
+  }, []);
+
   const onChangeEmail = (value) => {
     const username = value.split("@")[0]; // Get the part before '@'
     setUserInfo((prev) => {
@@ -38,23 +68,32 @@ export default function SignIn({ setActivePage }) {
     });
   };
 
-  const navigation = () => {
-    if (activeInnerPage === 0) {
-      setActivePage("main");
-    } else {
-      setActiveInnerPage((prev) => prev - 1);
-    }
-    setErrorInForm("");
+  const handleReturn = () => {
+    navigation.goBack();
   };
-  const Login = async () => {
+
+  const handleQuickLogin = async () => {
+    if (savedCredentials) {
+      setUserInfo({
+        Email: savedCredentials.email,
+        Password: savedCredentials.password,
+      });
+      await Login(savedCredentials.email, savedCredentials.password);
+    }
+  };
+
+  const Login = async (
+    email = userInfo.Email,
+    password = userInfo.Password
+  ) => {
     try {
       const response = await axios.post(
         `${process.env.EXPO_PUBLIC_AUTH_API}/login`,
         {
-          email: userInfo.Email,
-          password: userInfo.Password,
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
+          email,
+          password,
+          latitude: 0,
+          longitude: 0,
         },
         {
           headers: {
@@ -64,6 +103,10 @@ export default function SignIn({ setActivePage }) {
       );
 
       if (response.status === 201) {
+        if (rememberMe) {
+          await saveToSecureStore("email", email);
+          await saveToSecureStore("password", password);
+        }
         const UserData = {
           Token: response.data.token,
           ID: response.data.user._id,
@@ -71,6 +114,7 @@ export default function SignIn({ setActivePage }) {
           user: { ...response.data.user },
         };
         dispatch(login(UserData));
+
         return true;
       } else {
         setErrorInForm(
@@ -79,8 +123,6 @@ export default function SignIn({ setActivePage }) {
         return false;
       }
     } catch (error) {
-      console.log(error);
-
       const errorMessage = error.response
         ? error.response.data.message || "Login failed"
         : error.message;
@@ -89,71 +131,200 @@ export default function SignIn({ setActivePage }) {
       return false;
     }
   };
-  const Continue = () => {
-    if (activeInnerPage === 1) {
-      setErrorInForm("");
-      Login();
+
+  return (
+    <LoginStack.Navigator
+      initialRouteName="Email"
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      <LoginStack.Screen name="Email">
+        {(props) => (
+          <EmailScreen
+            {...props}
+            onChangeEmail={onChangeEmail}
+            userInfo={userInfo}
+            errorInForm={errorInForm}
+            handleReturn={handleReturn}
+            setErrorInForm={setErrorInForm}
+            savedCredentials={savedCredentials}
+            handleQuickLogin={handleQuickLogin}
+          />
+        )}
+      </LoginStack.Screen>
+      <LoginStack.Screen name="Password">
+        {(props) => (
+          <PasswordScreen
+            {...props}
+            onChangePassword={onChangePassword}
+            userInfo={userInfo}
+            errorInForm={errorInForm}
+            setErrorInForm={setErrorInForm}
+            Login={Login}
+            navigation={navigation}
+            rememberMe={rememberMe}
+            setRememberMe={setRememberMe}
+          />
+        )}
+      </LoginStack.Screen>
+    </LoginStack.Navigator>
+  );
+}
+
+const EmailScreen = ({
+  userInfo,
+  onChangeEmail,
+  navigation,
+  errorInForm,
+  handleReturn,
+  setErrorInForm,
+  savedCredentials,
+  handleQuickLogin,
+}) => {
+  const handleContinue = () => {
+    if (!userInfo.Email) {
+      alert("Please enter your email");
       return;
     }
-    setActiveInnerPage((prev) => prev + 1);
+    if (!userInfo.Email.includes("@")) {
+      alert("Please enter a valid email");
+      return;
+    }
+    navigation.navigate("Password");
+    setErrorInForm("");
   };
+
   return (
     <View style={styles.container}>
       <TouchableOpacity style={styles.return}>
         <AntDesign
           name="arrowleft"
           size={36}
-          color={COLORS.secondary}
-          onPress={navigation}
+          color="black"
+          onPress={handleReturn}
         />
       </TouchableOpacity>
       <View style={styles.textWrapper}>
         <Text style={styles.Header}>Sign In</Text>
       </View>
       <View style={styles.inputsWrapper}>
-        {activeInnerPage == 0 && (
-          <View style={styles.inputWrapper}>
-            <TextInput
-              style={styles.input}
-              onChangeText={onChangeEmail}
-              placeholder="Email"
-              value={userInfo.Email}
-            />
-          </View>
-        )}
-        {activeInnerPage === 1 && (
-          <View style={styles.inputWrapper}>
-            <TextInput
-              placeholder="Password"
-              returnKeyType="go"
-              secureTextEntry
-              autoCorrect={false}
-              style={styles.input}
-              onChangeText={onChangePassword}
-              value={userInfo.Password}
-            />
-          </View>
-        )}
+        <TextInput
+          style={styles.input}
+          onChangeText={onChangeEmail}
+          placeholder="Email"
+          value={userInfo.Email}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
       </View>
-      <View style={styles.buttonWrapper}>
-        <TouchableOpacity onPress={Continue} style={styles.DefaultButton}>
+
+      {savedCredentials && (
+        <TouchableOpacity
+          onPress={handleQuickLogin}
+          style={styles.DefaultButton}
+        >
           <Text style={styles.buttonText}>
-            {activeInnerPage === 2 ? "Sign in" : "Continue"}
+            Quick Login as {savedCredentials.email}
           </Text>
+        </TouchableOpacity>
+      )}
+
+      <View style={styles.buttonWrapper}>
+        <TouchableOpacity onPress={handleContinue} style={styles.DefaultButton}>
+          <Text style={styles.buttonText}>Continue</Text>
         </TouchableOpacity>
       </View>
       {errorInForm && <Text style={styles.Error}>{errorInForm}</Text>}
     </View>
   );
-}
+};
+
+const PasswordScreen = ({
+  userInfo,
+  onChangePassword,
+  errorInForm,
+  setErrorInForm,
+  Login,
+  navigation,
+  rememberMe,
+  setRememberMe,
+}) => {
+  const handleContinue = async () => {
+    if (!userInfo.Email) {
+      alert("Please enter your email");
+      return;
+    }
+    if (!userInfo.Email.includes("@")) {
+      alert("Please enter a valid email");
+      return;
+    }
+
+    setErrorInForm("");
+    await Login();
+  };
+  const handleReturn = () => {
+    navigation.navigate("SignIn", { screen: "Email" });
+  };
+
+  return (
+    <View style={styles.container}>
+      <TouchableOpacity style={styles.return} onPress={handleReturn}>
+        <AntDesign name="arrowleft" size={36} color="black" />
+      </TouchableOpacity>
+      <View style={styles.inputsWrapper}>
+        <TextInput
+          placeholder="Password"
+          returnKeyType="go"
+          secureTextEntry
+          autoCorrect={false}
+          style={styles.input}
+          onChangeText={onChangePassword}
+          value={userInfo.Password}
+        />
+      </View>
+      <View style={styles.rememberMeWrapper}>
+        <TouchableOpacity onPress={() => setRememberMe(!rememberMe)}>
+          <Fontisto
+            name={rememberMe ? "checkbox-active" : "checkbox-passive"}
+            size={24}
+            color={COLORS.secondary}
+          />
+        </TouchableOpacity>
+        <Text>Remember Me</Text>
+      </View>
+      {errorInForm ? <Text style={styles.Error}>{errorInForm}</Text> : null}
+      <View style={styles.buttonWrapper}>
+        <TouchableOpacity onPress={handleContinue} style={styles.DefaultButton}>
+          <Text style={styles.buttonText}>Continue</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+};
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "white",
+    backgroundColor: "#F5FCFF",
+
     alignItems: "center",
     paddingTop: 120,
-    paddingBottom: 50,
+    paddingBottom: 20,
     paddingHorizontal: 10,
+  },
+  screenContainer: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  rememberMeWrapper: {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 10,
+    gap: 10,
   },
   Error: {
     color: "red",
@@ -166,7 +337,7 @@ const styles = StyleSheet.create({
     top: 40,
     left: 10,
     padding: 10,
-    backgroundColor: "white",
+    backgroundColor: "#F5FCFF",
   },
   inputWrapper: {
     display: "flex",

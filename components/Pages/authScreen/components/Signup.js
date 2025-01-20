@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import AntDesign from "@expo/vector-icons/AntDesign";
@@ -9,8 +9,10 @@ import Screen3 from "./signupScreens/Screen3";
 import Screen4 from "./signupScreens/Screen4";
 import { useGetLocation } from "../../../hooks/getLocation";
 import { COLORS, FONTS } from "../../../../theme";
-export default function Signup({ setActivePage }) {
-  const [activeInnerPage, setActiveInnerPage] = useState(0);
+import { createStackNavigator } from "@react-navigation/stack";
+const Stack = createStackNavigator();
+
+export default function Signup({ navigation }) {
   const [location, error] = useGetLocation();
 
   const [userInfo, setUserInfo] = useState({
@@ -20,8 +22,17 @@ export default function Signup({ setActivePage }) {
     FirstName: "",
     LastName: "",
     OTP: "",
+    Address: "",
+    DOB: null,
   });
-  const [errorInForm, setErrorInForm] = useState("");
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const onDateChange = (event, selectedDate) => {
+    setShowDatePicker(false);
+    if (selectedDate) {
+      setUserInfo((prev) => ({ ...prev, DOB: selectedDate }));
+    }
+  };
   const onChangeEmail = (value) => {
     setUserInfo((prev) => {
       return { ...prev, Email: value };
@@ -47,6 +58,11 @@ export default function Signup({ setActivePage }) {
       return { ...prev, FirstName: value };
     });
   };
+  const onChangeAddress = (value) => {
+    setUserInfo((prev) => {
+      return { ...prev, Address: value };
+    });
+  };
   const onChangeLastName = (value) => {
     setUserInfo((prev) => {
       return { ...prev, LastName: value };
@@ -66,7 +82,7 @@ export default function Signup({ setActivePage }) {
     };
     axios(config)
       .then((response) => {
-        setErrorInForm("OTP sent ");
+        Alert.alert("OTP sent successfully");
       })
       .catch((error) => {
         console.log(error);
@@ -74,7 +90,7 @@ export default function Signup({ setActivePage }) {
         const errorMessage = error.response
           ? error.response.data.message || "OTP verification failed"
           : error.message;
-        setErrorInForm(errorMessage);
+        Alert.alert(errorMessage);
       });
   };
 
@@ -101,7 +117,7 @@ export default function Signup({ setActivePage }) {
       ) {
         return true;
       } else {
-        setErrorInForm(
+        Alert.alert(
           response.data.message || "Unexpected error during OTP verification"
         );
         return false;
@@ -113,7 +129,7 @@ export default function Signup({ setActivePage }) {
         ? error.response.data.message || "OTP verification failed"
         : error.message;
 
-      setErrorInForm(errorMessage);
+      Alert.alert(errorMessage);
       return false;
     }
   };
@@ -134,6 +150,8 @@ export default function Signup({ setActivePage }) {
           password: userInfo.Password,
           latitude: location.coords.latitude,
           longitude: location.coords.longitude,
+          DOB: userInfo.DOB,
+          Address: userInfo.Address,
         },
       };
 
@@ -142,7 +160,7 @@ export default function Signup({ setActivePage }) {
       if (response.status === 200) {
         return true;
       } else {
-        setErrorInForm(
+        Alert.alert(
           response.data.message || "Unexpected error during Registration"
         );
         return false;
@@ -154,7 +172,7 @@ export default function Signup({ setActivePage }) {
         ? error.response.data.message || "Registration failed"
         : error.message;
 
-      setErrorInForm(errorMessage);
+      Alert.alert(errorMessage);
       return false;
     }
   };
@@ -164,87 +182,160 @@ export default function Signup({ setActivePage }) {
     if (verified) {
       const SignedUp = await signUp();
       if (SignedUp) {
-        setActiveInnerPage(4);
-        setErrorInForm("");
+        navigation.navigate("Signup", { screen: "Screen4" });
       } else {
-        setErrorInForm("Error while signing up");
+        Alert.alert("Error while signing up");
       }
     } else {
-      setErrorInForm("OTP verification failed");
+      Alert.alert("OTP verification failed");
     }
   };
-  useEffect(() => {
-    if (activeInnerPage === 3) {
-      sendOTP();
-    }
-  }, [activeInnerPage]);
-  const navigation = () => {
-    setErrorInForm("");
-    if (activeInnerPage === 4 || activeInnerPage === 0) {
-      setActivePage("main");
-    } else {
-      activeInnerPage >= 1 && setActiveInnerPage((prev) => prev - 1);
-    }
-  };
+
   return (
-    <View style={styles.container}>
-      <TouchableOpacity style={styles.return}>
-        <AntDesign
-          name="arrowleft"
-          size={36}
-          color={COLORS.secondary}
-          onPress={navigation}
-        />
-      </TouchableOpacity>
-      {activeInnerPage === 0 && (
-        <Screen0
-          onChangeEmailFunction={onChangeEmail}
-          userInfo={userInfo}
-          setActiveScreen={setActivePage}
-          setActiveInnerPage={setActiveInnerPage}
-          setErrorInForm={setErrorInForm}
-        />
-      )}
-      {activeInnerPage === 1 && (
-        <Screen1
-          userInfo={userInfo}
-          setActiveInnerPage={setActiveInnerPage}
-          onChangePassword={onChangePassword}
-          onChangeConfirmPassword={onChangeConfirmPassword}
-          setErrorInForm={setErrorInForm}
-        />
-      )}
-      {activeInnerPage === 2 && (
-        <Screen2
-          userInfo={userInfo}
-          setActiveInnerPage={setActiveInnerPage}
-          setErrorInForm={setErrorInForm}
-          onChangeFirstName={onChangeFirstName}
-          onChangeLastName={onChangeLastName}
-        />
-      )}
-      {activeInnerPage === 3 &&
-        errorInForm != "User is already registered." && (
+    <Stack.Navigator
+      initialRouteName="Screen0"
+      screenOptions={{
+        headerShown: false,
+        headerStyle: styles.return,
+        cardStyle: styles.container,
+      }}
+    >
+      <Stack.Screen
+        name="Screen0"
+        options={({ navigation }) => ({
+          headerShown: true,
+          title: "",
+          headerLeft: () => (
+            <TouchableOpacity
+              style={styles.return}
+              onPress={() => navigation.goBack()} // Dynamically go back
+            >
+              <AntDesign name="arrowleft" size={34} color="black" />
+            </TouchableOpacity>
+          ),
+        })}
+      >
+        {(props) => (
+          <Screen0
+            {...props}
+            onChangeEmail={onChangeEmail}
+            userInfo={userInfo}
+            navigation={navigation}
+          />
+        )}
+      </Stack.Screen>
+      <Stack.Screen
+        name="Screen1"
+        options={({ navigation }) => ({
+          headerShown: true,
+          title: "",
+          headerLeft: () => (
+            <TouchableOpacity
+              style={styles.return}
+              onPress={() =>
+                navigation.navigate("Signup", { screen: "Screen0" })
+              }
+            >
+              <AntDesign name="arrowleft" size={34} color="black" />
+            </TouchableOpacity>
+          ),
+        })}
+      >
+        {(props) => (
+          <Screen1
+            {...props}
+            userInfo={userInfo}
+            onChangePassword={onChangePassword}
+            onChangeConfirmPassword={onChangeConfirmPassword}
+            navigation={navigation}
+          />
+        )}
+      </Stack.Screen>
+      <Stack.Screen
+        name="Screen2"
+        options={({ navigation }) => ({
+          headerShown: true,
+          title: "",
+          headerLeft: () => (
+            <TouchableOpacity
+              style={styles.return}
+              onPress={() =>
+                navigation.navigate("Signup", { screen: "Screen1" })
+              }
+            >
+              <AntDesign name="arrowleft" size={34} color="black" />
+            </TouchableOpacity>
+          ),
+        })}
+      >
+        {(props) => (
+          <Screen2
+            {...props}
+            userInfo={userInfo}
+            onChangeFirstName={onChangeFirstName}
+            onChangeAddress={onChangeAddress}
+            onChangeLastName={onChangeLastName}
+            navigation={navigation}
+            showDatePicker={showDatePicker}
+            onDateChange={onDateChange}
+            setShowDatePicker={setShowDatePicker}
+            sendOTP={sendOTP}
+          />
+        )}
+      </Stack.Screen>
+      <Stack.Screen
+        name="Screen3"
+        options={({ navigation }) => ({
+          headerShown: true,
+          title: "",
+          headerLeft: () => (
+            <TouchableOpacity
+              style={styles.return}
+              onPress={() =>
+                navigation.navigate("Signup", { screen: "Screen2" })
+              }
+            >
+              <AntDesign name="arrowleft" size={34} color="black" />
+            </TouchableOpacity>
+          ),
+        })}
+      >
+        {(props) => (
           <Screen3
+            {...props}
             sendOTP={sendOTP}
             finalizeSignUp={finalizeSignUp}
             onChangeOTP={onChangeOTP}
+            navigation={navigation}
           />
         )}
-      {activeInnerPage === 4 && (
-        <Screen4 setActiveScreen={setActivePage} userInfo={userInfo} />
-      )}
-      {errorInForm && <Text style={styles.Error}>{errorInForm}</Text>}
-    </View>
+      </Stack.Screen>
+      <Stack.Screen
+        name="Screen4"
+        options={({ navigation }) => ({
+          headerShown: true,
+          title: "",
+          headerLeft: () => (
+            <TouchableOpacity
+              style={styles.return}
+              onPress={() => navigation.navigate("Greeting")}
+            >
+              <AntDesign name="arrowleft" size={34} color="black" />
+            </TouchableOpacity>
+          ),
+        })}
+      >
+        {(props) => <Screen4 {...props} userInfo={userInfo} />}
+      </Stack.Screen>
+    </Stack.Navigator>
   );
 }
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "white",
+    backgroundColor: "#F5FCFF",
+
     alignItems: "center",
-    paddingTop: 120,
-    paddingBottom: 50,
     paddingHorizontal: 10,
     color: "black",
   },
@@ -255,11 +346,10 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.familyBold,
   },
   return: {
-    position: "absolute",
-    top: 40,
-    left: 10,
-    padding: 10,
-    backgroundColor: "white",
+    paddingTop: 50,
+    height: 100,
+    shadowColor: "white",
+    backgroundColor: "#F5FCFF",
   },
   inputWrapper: {
     display: "flex",

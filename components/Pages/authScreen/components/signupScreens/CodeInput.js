@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
   },
   input: {
     width: 40,
-    height: 40,
+    height: 50,
     backgroundColor: "#F5F5F5",
     textAlign: "center",
     fontSize: FONTS.large,

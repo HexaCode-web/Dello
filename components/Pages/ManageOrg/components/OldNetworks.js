@@ -1,23 +1,22 @@
 import { useFocusEffect } from "@react-navigation/native";
 import { Text, View, FlatList, StyleSheet, Dimensions } from "react-native";
 import { useSelector } from "react-redux";
-import { NETWORK_API } from "@env";
-import axios from "axios";
 import { useCallback, useState } from "react";
+import axios from "axios";
 import { COLORS, FONTS } from "../../../../theme";
+import NetworkItem from "./NetworkItem"; // Import the separated component
 
-const { width } = Dimensions.get("window"); // Get screen width
+export default function OldNetworks({ OrgId, setActivePage, activePage }) {
+  console.log(OrgId);
 
-export default function OldNetworks(OrgId) {
   const User = useSelector((state) => state.auth.user);
-
   const [oldNetworks, setOldNetworks] = useState([]);
 
   const getAllNetworks = async () => {
     try {
       const config = {
         method: "get",
-        url: `${process.env.EXPO_PUBLIC_NETWORK_API}/getOrgNetworks/${OrgId.OrgId}`,
+        url: `${process.env.EXPO_PUBLIC_NETWORK_API}/getOrgNetworks/${OrgId}`,
         headers: {
           "Accept-Language": "en",
           "Content-Type": "application/json",
@@ -42,25 +41,17 @@ export default function OldNetworks(OrgId) {
       return () => {
         setOldNetworks([]);
       };
-    }, [User])
-  );
-
-  const renderNetwork = ({ item }) => (
-    <View style={styles.card}>
-      <Text style={styles.title}>{item.networkName}</Text>
-      <Text style={styles.info}>Admin ID: {item.adminId}</Text>
-      <Text style={styles.info}>Size: {item.size}</Text>
-      <Text style={styles.info}>Type: {item.type}</Text>
-    </View>
+    }, [User, OrgId])
   );
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}> Networks</Text>
       {oldNetworks.length > 0 ? (
         <FlatList
           data={oldNetworks}
-          renderItem={renderNetwork}
+          renderItem={({ item }) => (
+            <NetworkItem item={item} setActivePage={setActivePage} />
+          )}
           keyExtractor={(item, index) => index.toString()}
           contentContainerStyle={styles.listContainer}
         />
@@ -73,44 +64,19 @@ export default function OldNetworks(OrgId) {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: "white",
-    alignItems: "center",
-    paddingTop: 40,
-    paddingBottom: 50,
-    justifyContent: "space-between",
+    backgroundColor: "#F5FCFF",
+    width: "100%",
     color: "black",
   },
   header: {
     fontSize: FONTS.large,
     fontFamily: FONTS.familyBold,
     color: COLORS.secondary,
+    marginBottom: 10,
   },
   listContainer: {
-    flexGrow: 1, // Ensures the list stretches fully
-    alignItems: "center", // Centers the cards horizontally
-  },
-  card: {
-    width: width - 40, // Full width minus some margin
-    backgroundColor: "#ffffff",
-    borderRadius: 8,
-    padding: 15,
-    marginBottom: 10,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 5,
-    color: "#0056b3",
-  },
-  info: {
-    fontSize: 14,
-    color: "#555",
+    width: "100%",
+    paddingHorizontal: 20,
   },
   noData: {
     fontSize: 16,

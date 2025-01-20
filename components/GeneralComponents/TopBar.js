@@ -5,8 +5,19 @@ import { useNavigation } from "@react-navigation/native";
 import { COLORS, FONTS } from "../../theme";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../redux/slices/authSlice";
-
-export default function TopBar({ Tabs }) {
+import AntDesign from "@expo/vector-icons/AntDesign";
+export default function TopBar({
+  Tabs = [
+    { Name: "Security", Page: "Security" },
+    { Name: "Profile", Page: "Profile" },
+    { Name: "Profiles", Page: "Profiles" },
+    { Name: "Organisation", Page: "Organizations" },
+  ],
+  hasReturnButton,
+  returnTarget,
+  Title,
+  returnFunction,
+}) {
   const [showMenu, setShowMenu] = react.useState(false);
   const dispatch = useDispatch();
   const navigation = useNavigation(); // Assuming you are using React Navigation v5 or later
@@ -28,12 +39,30 @@ export default function TopBar({ Tabs }) {
   };
   return (
     <View style={styles.topBar}>
-      <View style={styles.imageWrapper}>
-        <Image
-          source={require("../../assets/logodarkblue.png")}
-          style={styles.image}
-        />
-      </View>
+      {hasReturnButton ? (
+        <TouchableOpacity
+          style={styles.return}
+          onPress={() => {
+            if (returnFunction) {
+              returnFunction(); // Execute the passed function if it exists
+            } else if (returnTarget) {
+              navigation.navigate(returnTarget); // Navigate to the specified target if available
+            } else {
+              navigation.goBack(); // Default to going back if no target or function is provided
+            }
+          }}
+        >
+          <AntDesign name="arrowleft" size={36} color={COLORS.secondary} />
+        </TouchableOpacity>
+      ) : (
+        <View style={styles.imageWrapper}>
+          <Image
+            source={require("../../assets/logodarkblue.png")}
+            style={styles.image}
+          />
+        </View>
+      )}
+      <Text style={styles.title}>{Title}</Text>
       <HamburgerButton
         onPress={() => {
           setShowMenu((prev) => !prev);
@@ -67,9 +96,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 20,
+
+    backgroundColor: "#F5FCFF",
+
     zIndex: 1000,
   },
-
+  title: {
+    fontSize: FONTS.large,
+    fontFamily: FONTS.familyBold,
+    color: COLORS.secondary,
+  },
   image: {
     width: 20,
     objectFit: "contain",
@@ -87,7 +123,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 1,
     shadowRadius: 2,
     elevation: 5,
-    backgroundColor: "white",
+    backgroundColor: "#F5FCFF",
+
     flexDirection: "column", // Ensures vertical stacking of tabs
     alignItems: "flex-start", // Align tabs to the start
     width: "auto", // Adjust width as needed

@@ -4,17 +4,13 @@ import {
   StyleSheet,
   TouchableOpacity,
   TextInput,
+  ScrollView,
+  Alert,
 } from "react-native";
 import { COLORS, FONTS } from "../../../../../theme";
 import React, { useState } from "react";
 
-export default function Screen0({
-  onChangeEmailFunction,
-  userInfo,
-  setActiveScreen,
-  setActiveInnerPage,
-  setErrorInForm,
-}) {
+export default function Screen0({ onChangeEmail, userInfo, navigation }) {
   const [isValidEmail, setIsValidEmail] = useState(true);
 
   const validateEmail = (email) => {
@@ -22,22 +18,18 @@ export default function Screen0({
     return emailRegex.test(email);
   };
   const handleEmailChange = (input) => {
-    onChangeEmailFunction(input);
+    onChangeEmail(input);
     setIsValidEmail(validateEmail(input)); // Update validation status
   };
   return (
-    <>
-      <View style={styles.textWrapper}>
-        <Text style={styles.Header}>Sign up</Text>
-        <Text style={styles.signUpPromptText}>
-          enter your email and password to sign up
-        </Text>
-      </View>
+    <ScrollView>
+      <Text style={styles.Header}>Sign up</Text>
+
       <View style={styles.inputsWrapper}>
         <View style={styles.inputWrapper}>
-          <Text style={styles.signUpPromptText}>Email</Text>
           <TextInput
             style={styles.input}
+            placeholder="Email"
             onChangeText={(value) => handleEmailChange(value)}
             value={userInfo.Email}
           />
@@ -50,7 +42,7 @@ export default function Screen0({
             <Text
               style={styles.buttonTextEmpty}
               onPress={() => {
-                setActiveScreen("SignIn");
+                navigation.navigate("SignIn", { screen: "Email" });
               }}
             >
               Sign in
@@ -60,10 +52,9 @@ export default function Screen0({
         <TouchableOpacity
           onPress={() => {
             if (isValidEmail && userInfo.Email != "") {
-              setActiveInnerPage(1);
-              setErrorInForm("");
+              navigation.navigate("Signup", { screen: "Screen1" });
             } else {
-              setErrorInForm("must be a valid email address");
+              Alert.alert("must be a valid email address");
             }
           }}
           style={styles.DefaultButton}
@@ -71,7 +62,7 @@ export default function Screen0({
           <Text style={styles.buttonText}>Continue</Text>
         </TouchableOpacity>
       </View>
-    </>
+    </ScrollView>
   );
 }
 const styles = StyleSheet.create({
@@ -103,6 +94,8 @@ const styles = StyleSheet.create({
   Header: {
     fontSize: FONTS.large,
     fontFamily: FONTS.familyBold,
+    marginBottom: 20,
+    marginLeft: 40,
   },
   signUpPrompt: {
     display: "flex",

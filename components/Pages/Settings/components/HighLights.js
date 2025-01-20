@@ -19,7 +19,8 @@ import { COLORS, FONTS } from "../../../../theme";
 import { updateUserData } from "../../../redux/slices/authSlice";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
-const HighLights = ({ setActivePage }) => {
+
+const HighLights = ({ navigation }) => {
   const User = useSelector((state) => state.auth.user);
   const dispatch = useDispatch();
 
@@ -111,7 +112,7 @@ const HighLights = ({ setActivePage }) => {
         <FontAwesome6
           name="edit"
           size={24}
-          color={COLORS.primary}
+          color={COLORS.secondary}
           style={styles.icon}
           onPress={() => {
             showModal(item);
@@ -126,7 +127,7 @@ const HighLights = ({ setActivePage }) => {
         <Ionicons
           name="trash-outline"
           size={24}
-          color={COLORS.primary}
+          color={COLORS.secondary}
           style={styles.icon}
         />
       </TouchableOpacity>
@@ -198,7 +199,6 @@ const HighLights = ({ setActivePage }) => {
 
       if (response.status === 200) {
         setSaved(false);
-        console.log(response.data.user);
 
         dispatch(updateUserData(response.data.user));
       }
@@ -306,7 +306,7 @@ const HighLights = ({ setActivePage }) => {
           <TouchableOpacity
             onPress={async () => {
               await saveHighLightDetails();
-              setActivePage("Skills");
+              navigation.navigate("Settings", { screen: "Skills" });
             }}
             style={styles.DefaultButton}
           >
@@ -387,7 +387,8 @@ const styles = StyleSheet.create({
   container: {
     width: "95%",
     padding: 20,
-    backgroundColor: "white",
+    backgroundColor: "#F5FCFF",
+
     gap: 20,
     margin: 10,
     marginVertical: 30,
@@ -399,7 +400,8 @@ const styles = StyleSheet.create({
   title: {
     position: "absolute",
     top: -25,
-    backgroundColor: "white",
+    backgroundColor: "#F5FCFF",
+
     left: 10,
     textAlign: "center",
     color: COLORS.secondary,
@@ -417,7 +419,8 @@ const styles = StyleSheet.create({
   modalContent: {
     width: "80%",
     padding: 20,
-    backgroundColor: "white",
+    backgroundColor: "#F5FCFF",
+
     borderRadius: 10,
     alignItems: "center",
   },

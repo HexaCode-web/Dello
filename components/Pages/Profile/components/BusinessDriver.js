@@ -9,12 +9,9 @@ import {
 } from "react-native";
 import { COLORS, FONTS } from "../../../../theme";
 import { useNavigation } from "@react-navigation/native";
-import { useDispatch } from "react-redux";
-import { setActiveSettingsPage } from "../../../redux/slices/activeSettingsPage";
 
 export default function BusinessDriver({ data }) {
   const navigation = useNavigation();
-  const dispatch = useDispatch();
   const renderItem = ({ item }) => (
     <View style={styles.itemContainer}>
       <Text style={styles.text}>
@@ -36,8 +33,7 @@ export default function BusinessDriver({ data }) {
     <TouchableOpacity
       style={styles.container}
       onPress={() => {
-        dispatch(setActiveSettingsPage("BusinessDrivers"));
-        navigation.navigate("Settings");
+        navigation.navigate("Settings", { screen: "Business Drivers" });
       }}
     >
       {data && data.length > 0 ? (

@@ -5,34 +5,14 @@ import HamburgerButton from "../../HomeScreen/components/HamburgerButton";
 import react from "react";
 import { useNavigation } from "@react-navigation/native";
 import { TouchableOpacity } from "react-native";
-
+import TopBar from "../../../GeneralComponents/TopBar";
 export default function Header() {
   const [showMenu, setShowMenu] = react.useState(false);
   const navigation = useNavigation(); // Assuming you are using React Navigation v5 or later
 
-  const Tabs = [
-    { Name: "Deleted Networks", Page: "Profile" },
-    { Name: "Other Network", Page: "Profile" },
-  ];
-
-  const RenderTabs = () => {
-    return Tabs.map((Tab) => (
-      <View style={styles.signUpPromptBtn} key={Tab.Name}>
-        <TouchableOpacity
-          onPress={() => {
-            setShowMenu(false);
-            navigation.navigate(Tab.Page);
-          }}
-        >
-          <Text style={styles.buttonTextEmpty}>{Tab.Name}</Text>
-        </TouchableOpacity>
-      </View>
-    ));
-  };
-
   return (
     <View style={styles.container}>
-      <View style={styles.inputsWrapper}>
+      {/* <View style={styles.inputsWrapper}>
         <AntDesign
           name="search1"
           size={24}
@@ -44,13 +24,7 @@ export default function Header() {
           placeholder="Search Contacts"
           placeholderTextColor={COLORS.placeholder} // Optional: Change color for placeholder text
         />
-      </View>
-      <HamburgerButton
-        onPress={() => {
-          setShowMenu((prev) => !prev);
-        }}
-      />
-      {showMenu && <View style={styles.dropDown}>{RenderTabs()}</View>}
+      </View> */}
     </View>
   );
 }
@@ -107,7 +81,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 1,
     shadowRadius: 2,
     elevation: 5,
-    backgroundColor: "white",
+    backgroundColor: "#F5FCFF",
+
     flexDirection: "column", // Ensures vertical stacking of tabs
     alignItems: "flex-start", // Align tabs to the start
     width: "auto", // Adjust width as needed

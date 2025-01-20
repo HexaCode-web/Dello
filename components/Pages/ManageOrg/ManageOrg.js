@@ -1,28 +1,31 @@
 import { Text, View, StyleSheet } from "react-native";
 import OldNetworks from "./components/OldNetworks";
-import { TouchableOpacity } from "react-native";
-import AntDesign from "@expo/vector-icons/AntDesign";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import CreateNetwork from "./components/CreateNetwork";
 import { COLORS, FONTS } from "../../../theme";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useSelector } from "react-redux";
 import Settings from "./components/Settings";
 import axios from "axios";
-
+import SettingSection from "../../GeneralComponents/SettingSection.js";
+import TopBar from "../../GeneralComponents/TopBar.js";
+import DropdownSlider from "../../GeneralComponents/DropdownSlider.js";
 export default function ManageOrg() {
+  const navigation = useNavigation();
+
   const User = useSelector((state) => state.auth.user);
   const associatedEmails = User.user.associatedEmails;
+  const [activePage, setActivePage] = useState(0);
 
-  const [activeOrg, setActiveOrg] = useState(
-    associatedEmails ? associatedEmails[0] : null
-  );
+  const [activeOrg, setActiveOrg] = useState(null);
   const [orgData, setOrgData] = useState(null);
-  const getActiveOrg = async () => {
+  console.log(orgData);
+
+  const getActiveOrg = async (orgId) => {
     try {
       const config = {
         method: "get",
-        url: `${process.env.EXPO_PUBLIC_ORG_API}/${activeOrg.OrgId}`,
+        url: `${process.env.EXPO_PUBLIC_ORG_API}/${orgId}`,
         headers: {
           "Accept-Language": "en",
           "Content-Type": "application/json",
@@ -30,17 +33,9 @@ export default function ManageOrg() {
         },
       };
       const response = await axios(config);
-
-      // Axios automatically throws errors for non-2xx statuses
-      setOrgData(response.data);
-
-      // Handle the data
-      const data = response.data;
-      // Perform any state updates or further processing here
+      return response.data; // return the organization data
     } catch (error) {
       console.error("Error:", error.response?.status, error.message);
-
-      // Log additional details if available
       if (error.response) {
         console.error("Backend Error Response:", error.response.data);
       }
@@ -49,97 +44,142 @@ export default function ManageOrg() {
 
   useFocusEffect(
     useCallback(() => {
-      getActiveOrg();
-    }, [activeOrg])
+      const fetchAllOrgs = async () => {
+        if (associatedEmails && associatedEmails.length > 0) {
+          try {
+            // Fetch data for each organization independently
+            const orgs = await Promise.all(
+              associatedEmails.map((email) => getActiveOrg(email.OrgId))
+            );
+            setOrgData(orgs); // Set the fetched data to state
+          } catch (error) {
+            console.error("Error fetching organizations:", error);
+          }
+        }
+      };
+
+      fetchAllOrgs();
+    }, [associatedEmails])
   );
-  const navigation = useNavigation();
-  const [activePage, setActivePage] = useState("Home");
   const handleInnerNavigation = () => {
-    if (activePage != "Home") {
-      setActivePage("Home");
+    if (activePage > 0) {
+      setActivePage(0);
     } else {
       navigation.navigate("Home");
     }
   };
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.return}>
-        <AntDesign
-          name="arrowleft"
-          size={36}
-          color={COLORS.secondary}
-          onPress={handleInnerNavigation}
+      <TopBar hasReturnButton={true} returnFunction={handleInnerNavigation} />
+      {activePage == 0 && (
+        <View style={styles.buttonWrapper}>
+          <SettingSection
+            title="Create Organization"
+            onPress={() => {
+              setActivePage(0);
+              navigation.navigate("CreateOrg");
+            }}
+          />
+        </View>
+      )}
+      {orgData && activePage === 0 && (
+        <DropdownSlider
+          data={orgData.map((org) => org?.name)}
+          placeholder={activeOrg ? activeOrg?.name : "Select Org"}
+          onSelect={(item) =>
+            setActiveOrg(orgData.find((org) => org?.name === item))
+          }
         />
-      </TouchableOpacity>
-      <Text style={styles.title}>Manage Organization</Text>
-      {activeOrg && (
-        <Text style={styles.subtitle}>Currently managing: {orgData.name}</Text>
       )}
       {activeOrg ? (
         <View style={styles.buttonWrapper}>
-          {activePage != "Old" && (
-            <TouchableOpacity
-              style={styles.DefaultButton}
+          {activePage == 0 && (
+            <SettingSection
+              title="Settings"
               onPress={() => {
-                setActivePage("Old");
+                setActivePage(3);
               }}
-            >
-              <Text style={styles.buttonText}>View Active Networks</Text>
-            </TouchableOpacity>
+            />
           )}
-          {activePage != "Create" && (
-            <TouchableOpacity
-              style={styles.DefaultButton}
-              onPress={() => {
-                setActivePage("Create");
-              }}
-            >
-              <Text style={styles.buttonText}>Create New Network</Text>
-            </TouchableOpacity>
+          {activePage == 0 && (
+            <View style={styles.boxWrapper}>
+              <Text style={styles.title}>Networks</Text>
+
+              <SettingSection title="Active" onPress={() => setActivePage(1)} />
+
+              <SettingSection title="New" onPress={() => setActivePage(2)} />
+            </View>
           )}
-          {/* {activePage != "Settings" && (
-          <TouchableOpacity
-            style={styles.DefaultButton}
-            onPress={() => {
-              setActivePage("Settings");
-            }}
-          >
-            <Text style={styles.buttonText}>Settings</Text>
-          </TouchableOpacity>
-        )} */}
         </View>
       ) : (
         <>
-          <Text style={styles.subtitle}>No Organizations Found</Text>
-          <TouchableOpacity
-            style={styles.DefaultButton}
-            onPress={() => {
-              navigation.navigate("CreateOrg");
-            }}
-          >
-            <Text style={styles.buttonText}>Create Organization</Text>
-          </TouchableOpacity>
+          <View style={styles.header}>
+            <Text style={styles.headerText}>No Organizations Found</Text>
+          </View>
         </>
       )}
-      {activePage === "Old" && <OldNetworks OrgId={activeOrg.OrgId} />}
-      {activePage === "Create" && (
-        <CreateNetwork orgId={activeOrg.OrgId} userId={User.ID} />
+      {activePage === 1 && (
+        <OldNetworks OrgId={activeOrg._id} setActivePage={setActivePage} />
       )}
-      {/* {activePage === "Settings" && (
-        <Settings orgId={activeOrg.OrgId} userId={User.ID} />
-      )} */}
+      {activePage === 2 && (
+        <CreateNetwork
+          orgId={activeOrg._id}
+          setMainActivePage={setActivePage}
+        />
+      )}
+      {activePage === 3 && <Settings org={activeOrg} setOrgData={setOrgData} />}
     </View>
   );
 }
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "white",
+    backgroundColor: "#F5FCFF",
     alignItems: "center",
-    paddingTop: 55,
-    paddingBottom: 50,
-    justifyContent: "space-between",
+    flexDirection: "column",
+    paddingTop: 20,
+    paddingBottom: 20,
     color: "black",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 16,
+    width: "90%",
+    marginTop: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e0e0e0",
+  },
+  boxWrapper: {
+    width: "90%",
+    padding: 10,
+    backgroundColor: "#F5FCFF",
+
+    gap: 20,
+    margin: "auto",
+    marginVertical: 30,
+    borderWidth: 1,
+    borderColor: COLORS.borders,
+    borderRadius: 10,
+    position: "relative",
+  },
+  title: {
+    position: "absolute",
+    top: -25,
+    backgroundColor: "#F5FCFF",
+
+    left: 10,
+    textAlign: "center",
+    color: COLORS.secondary,
+    fontSize: FONTS.large,
+    fontFamily: FONTS.familyBold,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  headerText: {
+    fontFamily: FONTS.familyBold,
+    fontSize: FONTS.medium,
   },
   subtitle: {
     marginBottom: "auto",
@@ -154,16 +194,10 @@ const styles = StyleSheet.create({
     top: 40,
     left: 10,
     padding: 10,
-    backgroundColor: "white",
+    backgroundColor: "#F5FCFF",
   },
   buttonWrapper: {
     width: "100%",
-    justifyContent: "center",
-    alignItems: "center",
-    height: 200,
-    borderRadius: 10,
-    marginBottom: 10,
-    gap: 20,
   },
   DefaultButton: {
     width: "90%",

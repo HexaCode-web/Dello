@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
 import { COLORS, FONTS } from "../../../../theme";
 
-export default function Greeting({ setActivePage }) {
+export default function Greeting({ navigation }) {
   return (
     <View style={styles.container}>
       <Image
@@ -13,9 +13,7 @@ export default function Greeting({ setActivePage }) {
         <Text style={styles.signUpPromptText}>Don't have an account?</Text>
         <TouchableOpacity
           style={styles.signUpPromptBtn}
-          onPress={() => {
-            setActivePage("SignUp");
-          }}
+          onPress={() => navigation.navigate("Signup")}
         >
           <Text style={styles.buttonTextEmpty}>Sign Up</Text>
         </TouchableOpacity>
@@ -23,24 +21,23 @@ export default function Greeting({ setActivePage }) {
       <View style={styles.buttonWrapper}>
         <TouchableOpacity
           style={styles.DefaultButton}
-          onPress={() => {
-            setActivePage("SignIn");
-          }}
+          onPress={() => navigation.navigate("SignIn")}
         >
           <Text style={styles.buttonText}>Login with Email</Text>
         </TouchableOpacity>
       </View>
-      <Text>version 1.4</Text>
+      <Text>version 1.7.4</Text>
     </View>
   );
 }
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "white",
+    backgroundColor: "#F5FCFF",
+
     alignItems: "center",
-    paddingTop: 40,
-    paddingBottom: 50,
+    paddingTop: 20,
+    paddingBottom: 20,
     justifyContent: "space-between",
     color: "black",
   },

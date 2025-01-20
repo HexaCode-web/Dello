@@ -5,37 +5,67 @@ import {
   TouchableOpacity,
   TextInput,
 } from "react-native";
+
+import React, { useState } from "react";
 import { COLORS, FONTS } from "../../../../theme";
+
 export default function Screen2({
+  onChangeEmailFunction,
   userInfo,
-  onChangeOrgName,
   setActiveInnerPage,
   setErrorInForm,
 }) {
+  const [isValidEmail, setIsValidEmail] = useState(true);
+
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    // List of common free email domains
+    const freeEmailDomains = [
+      "gmail.com",
+      "yahoo.com",
+      "outlook.com",
+      "hotmail.com",
+      "aol.com",
+      "icloud.com",
+      "mail.com",
+      "protonmail.com",
+    ];
+
+    // Extract the domain part of the email
+    const domain = email.split("@")[1];
+
+    // Check if the email is valid and not from a free domain
+    return emailRegex.test(email) && !freeEmailDomains.includes(domain);
+  };
+
+  const handleEmailChange = (input) => {
+    onChangeEmailFunction(input);
+    setIsValidEmail(validateEmail(input)); // Update validation status
+  };
   return (
     <>
-      <View style={styles.textWrapper}>
-        <Text style={styles.Header}>Create an organization</Text>
-      </View>
+      <View style={styles.textWrapper}></View>
       <View style={styles.inputsWrapper}>
         <View style={styles.inputWrapper}>
           <TextInput
             style={styles.input}
-            onChangeText={(value) => onChangeOrgName(value)}
-            value={userInfo.orgName}
-            placeholder="Organization name"
+            onChangeText={(value) => handleEmailChange(value)}
+            value={userInfo.orgEmailId}
+            placeholder="Organization Email"
           />
         </View>
       </View>
+
       <View style={styles.buttonWrapper}>
         <TouchableOpacity
           onPress={() => {
-            if (userInfo.orgName.length == 0) {
-              setErrorInForm("Organization name is required");
-              return;
+            if (isValidEmail && userInfo.orgEmailId != "") {
+              setActiveInnerPage(3);
+              setErrorInForm("");
+            } else {
+              setErrorInForm("must be a professional email address");
             }
-            setActiveInnerPage(1);
-            setErrorInForm("");
           }}
           style={styles.DefaultButton}
         >
@@ -50,9 +80,6 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "column",
   },
-  inputsWrapper: {
-    flex: 1,
-  },
   input: {
     height: 50,
     width: 350,
@@ -61,23 +88,33 @@ const styles = StyleSheet.create({
     padding: 10,
     fontSize: FONTS.medium,
     fontFamily: FONTS.familyBold,
-
     borderRadius: 30,
   },
-  Header: {
-    width: "100%",
-    fontSize: FONTS.large,
-    fontFamily: FONTS.familyBold,
-    marginBottom: 10,
+  inputsWrapper: {
+    flex: 1,
+    width: "90%",
   },
   textWrapper: {
     marginBottom: 20,
-    marginLeft: 40,
+    marginLeft: 5,
     display: "flex",
     justifyContent: "flex-start",
     alignItems: "flex-start",
-    width: "100%",
     gap: 10,
+    width: "90%",
+  },
+  Header: {
+    fontSize: FONTS.large,
+    fontFamily: FONTS.familyBold,
+    marginRight: "auto",
+  },
+  signUpPrompt: {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 10,
   },
   signUpPromptText: {
     fontSize: FONTS.medium,
@@ -85,8 +122,15 @@ const styles = StyleSheet.create({
 
     color: COLORS.textSecondary,
   },
+  signUpPromptBtn: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    textAlign: "center",
+  },
+
   buttonWrapper: {
-    width: "100%",
+    width: "90%",
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 10,
@@ -110,7 +154,11 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
-
+  buttonTextEmpty: {
+    fontSize: FONTS.medium,
+    fontFamily: FONTS.familyBold,
+    color: COLORS.secondary,
+  },
   buttonText: {
     fontSize: FONTS.medium,
     fontFamily: FONTS.familyBold,

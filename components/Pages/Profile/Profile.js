@@ -16,8 +16,10 @@ import ImmediateNeeds from "./components/ImmediateNeeds";
 export default function Profile() {
   const User = useSelector((state) => state.auth.user);
   const tabsAr = [
-    { Name: "Settings", Page: "Settings" },
-    { Name: "Organizations", Page: "ManageOrg" },
+    { Name: "Security", Page: "Security" },
+    { Name: "Profile", Page: "Profile" },
+    { Name: "Profiles", Page: "Profiles" },
+    { Name: "Organisation", Page: "Organizations" },
   ];
 
   const [data, setData] = useState({
@@ -77,8 +79,8 @@ export default function Profile() {
 
   return (
     <View style={styles.container}>
-      <TopBar Tabs={tabsAr} />
-      <Header />
+      <TopBar Title="Profile" hasReturnButton={true} />
+      <Header User={User} />
       {data && (
         <FlatList
           data={listData}
@@ -94,9 +96,8 @@ export default function Profile() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "white",
-    paddingTop: 40,
-    paddingBottom: 50,
+    backgroundColor: "#F5FCFF",
+    paddingTop: 20,
     justifyContent: "flex-start",
   },
 });

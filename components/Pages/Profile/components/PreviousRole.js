@@ -2,12 +2,9 @@ import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
 import { FONTS, COLORS } from "../../../../theme";
 import { FlatList } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { useDispatch } from "react-redux";
-import { setActiveSettingsPage } from "../../../redux/slices/activeSettingsPage";
 
 export default function PreviousRole({ data }) {
   const navigation = useNavigation();
-  const dispatch = useDispatch();
   function getTimeSince(startDate) {
     // Get the current date
     const currentDate = new Date();
@@ -51,9 +48,16 @@ export default function PreviousRole({ data }) {
     return result.trim();
   }
   const renderItem = ({ item }) => {
-    const date = new Date(item.Duration);
-
-    const formattedDate = date.toISOString().split("T")[0];
+    let formattedDate = "N/A";
+    if (item.Duration) {
+      const startDate = new Date(item.Duration);
+      if (!isNaN(startDate)) {
+        const options = { year: "numeric", month: "short" };
+        formattedDate = new Intl.DateTimeFormat("en-US", options).format(
+          startDate
+        );
+      }
+    }
     return (
       <View>
         <Text style={styles.text}>
@@ -89,8 +93,7 @@ export default function PreviousRole({ data }) {
     <TouchableOpacity
       style={styles.container}
       onPress={() => {
-        dispatch(setActiveSettingsPage("PreviousRoles"));
-        navigation.navigate("Settings");
+        navigation.navigate("Settings", { screen: "Previous Roles" });
       }}
     >
       {data && data.length > 0 ? (

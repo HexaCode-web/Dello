@@ -19,7 +19,7 @@ import { COLORS, FONTS } from "../../../../theme";
 import { updateUserData } from "../../../redux/slices/authSlice";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
-const PreviousRoles = ({ setActivePage }) => {
+const PreviousRoles = ({ navigation }) => {
   const User = useSelector((state) => state.auth.user);
   const dispatch = useDispatch();
   const [position, setPosition] = useState("");
@@ -138,7 +138,6 @@ const PreviousRoles = ({ setActivePage }) => {
 
       if (response.status === 200) {
         setSaved(false);
-        console.log(response.data.user);
         setActiveService(null);
         setModalVisible(false);
         dispatch(updateUserData(response.data.user));
@@ -226,7 +225,7 @@ const PreviousRoles = ({ setActivePage }) => {
           <FontAwesome6
             name="edit"
             size={24}
-            color={COLORS.primary}
+            color={COLORS.secondary}
             style={styles.icon}
             onPress={() => {
               showModal(item);
@@ -241,7 +240,7 @@ const PreviousRoles = ({ setActivePage }) => {
           <Ionicons
             name="trash-outline"
             size={24}
-            color={COLORS.primary}
+            color={COLORS.secondary}
             style={styles.icon}
           />
         </TouchableOpacity>
@@ -314,7 +313,7 @@ const PreviousRoles = ({ setActivePage }) => {
             onPress={async () => {
               await savePresentRoleDetails();
 
-              setActivePage("Education");
+              navigation.navigate("Settings", { screen: "Education" });
             }}
             style={styles.DefaultButton}
           >
@@ -395,7 +394,8 @@ const styles = StyleSheet.create({
   container: {
     width: "95%",
     padding: 20,
-    backgroundColor: "white",
+    backgroundColor: "#F5FCFF",
+
     gap: 20,
     margin: 10,
     marginVertical: 30,
@@ -407,7 +407,8 @@ const styles = StyleSheet.create({
   title: {
     position: "absolute",
     top: -25,
-    backgroundColor: "white",
+    backgroundColor: "#F5FCFF",
+
     left: 10,
     textAlign: "center",
     color: COLORS.secondary,
@@ -425,7 +426,8 @@ const styles = StyleSheet.create({
   modalContent: {
     width: "80%",
     padding: 20,
-    backgroundColor: "white",
+    backgroundColor: "#F5FCFF",
+
     borderRadius: 10,
     alignItems: "center",
   },

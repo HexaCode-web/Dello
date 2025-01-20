@@ -7,26 +7,21 @@ import { COLORS, FONTS } from "../../../../theme";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../../redux/slices/authSlice";
 
-export default function TopBar({ activePage, setActivePage }) {
+export default function TopBar({ title, returnTarget }) {
   const [showMenu, setShowMenu] = react.useState(false);
 
   const dispatch = useDispatch();
 
   const navigation = useNavigation();
   const navigate = () => {
-    if (activePage !== "main") {
-      setActivePage("main");
-      return;
-    } else {
-      setShowMenu(false), navigation.navigate("Profile");
-    }
+    setShowMenu(false), navigation.navigate(returnTarget);
   };
   return (
     <View style={styles.topBar}>
       <TouchableOpacity style={styles.return} onPress={navigate}>
         <AntDesign name="arrowleft" size={36} color={COLORS.secondary} />
       </TouchableOpacity>
-      <Text style={styles.title}>Settings</Text>
+      <Text style={styles.title}>{title}</Text>
       <HamburgerButton
         onPress={() => {
           setShowMenu((prev) => !prev);
@@ -79,7 +74,6 @@ const styles = StyleSheet.create({
     height: 50,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 20,
     zIndex: 1000,
   },
 
@@ -100,7 +94,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 1,
     shadowRadius: 2,
     elevation: 5,
-    backgroundColor: "white",
+    backgroundColor: "#F5FCFF",
+
     flexDirection: "column", // Ensures vertical stacking of tabs
     alignItems: "flex-start", // Align tabs to the start
     width: "auto", // Adjust width as needed

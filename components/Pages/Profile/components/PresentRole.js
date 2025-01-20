@@ -1,12 +1,9 @@
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { COLORS, FONTS } from "../../../../theme";
 import { useNavigation } from "@react-navigation/native";
-import { useDispatch } from "react-redux";
-import { setActiveSettingsPage } from "../../../redux/slices/activeSettingsPage";
 
 export default function presentRole({ data }) {
   const navigation = useNavigation();
-  const dispatch = useDispatch();
   function getTimeSince(startDate) {
     // Get the current date
     const currentDate = new Date();
@@ -54,8 +51,7 @@ export default function presentRole({ data }) {
     <TouchableOpacity
       style={styles.container}
       onPress={() => {
-        dispatch(setActiveSettingsPage("PresentRole"));
-        navigation.navigate("Settings");
+        navigation.navigate("Settings", { screen: "Present Role" });
       }}
     >
       {data.Company ? (

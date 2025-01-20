@@ -11,39 +11,53 @@ import Screen3 from "./Screens/Screen3";
 import Screen4 from "./Screens/Screen4";
 import { useNavigation } from "@react-navigation/native";
 import { useSelector } from "react-redux";
+import TopBar from "../../GeneralComponents/TopBar";
 export default function CreateOrg() {
   const User = useSelector((state) => state.auth.user);
   const navigation = useNavigation();
 
   const [activeInnerPage, setActiveInnerPage] = useState(0);
   const [location, error] = useGetLocation();
-  const [userInfo, setUserInfo] = useState({
+  const [orgInfo, setOrgInfo] = useState({
     orgEmailId: "",
     confirmPassword: "",
     orgName: "",
     OTP: "",
+    type: "",
     address: "",
+    officeName: "",
   });
+  console.log(orgInfo);
 
   const [errorInForm, setErrorInForm] = useState("");
   const onChangeEmail = (value) => {
-    setUserInfo((prev) => {
+    setOrgInfo((prev) => {
       return { ...prev, orgEmailId: value };
     });
   };
   const onChangeAddress = (value) => {
-    setUserInfo((prev) => {
+    setOrgInfo((prev) => {
       return { ...prev, address: value };
+    });
+  };
+  const onChangeType = (value) => {
+    setOrgInfo((prev) => {
+      return { ...prev, type: value };
+    });
+  };
+  const onChangeOrgOfficeName = (value) => {
+    setOrgInfo((prev) => {
+      return { ...prev, officeName: value };
     });
   };
 
   const onChangeOTP = (value) => {
-    setUserInfo((prev) => {
+    setOrgInfo((prev) => {
       return { ...prev, OTP: value };
     });
   };
   const onChangeOrgName = (value) => {
-    setUserInfo((prev) => {
+    setOrgInfo((prev) => {
       return { ...prev, orgName: value };
     });
   };
@@ -56,7 +70,7 @@ export default function CreateOrg() {
         "Content-Type": "application/json",
       },
       data: {
-        email: userInfo.orgEmailId,
+        email: orgInfo.orgEmailId,
       },
     };
     axios(config)
@@ -82,8 +96,8 @@ export default function CreateOrg() {
           "Content-Type": "application/json",
         },
         data: {
-          email: userInfo.orgEmailId,
-          sentOTP: userInfo.OTP,
+          email: orgInfo.orgEmailId,
+          sentOTP: orgInfo.OTP,
         },
       };
 
@@ -124,12 +138,14 @@ export default function CreateOrg() {
           Authorization: `Bearer ${User.Token}`,
         },
         data: {
-          email: userInfo.orgEmailId,
-          name: userInfo.orgName,
+          email: orgInfo.orgEmailId,
+          name: orgInfo.orgName,
           latitude: location.coords.latitude,
           longitude: location.coords.longitude,
-          address: userInfo.address,
+          address: orgInfo.address,
           userId: User.user._id,
+          type: orgInfo.type,
+          officeName: orgInfo.officeName,
         },
       };
 
@@ -167,41 +183,41 @@ export default function CreateOrg() {
     setErrorInForm("");
     if (activeInnerPage === 4 || activeInnerPage === 0) {
       setActiveInnerPage(0);
-      navigation.navigate("Home");
+      navigation.navigate("Organizations");
     } else {
       activeInnerPage >= 1 && setActiveInnerPage((prev) => prev - 1);
     }
   };
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.return}>
-        <AntDesign
-          name="arrowleft"
-          size={36}
-          color={COLORS.secondary}
-          onPress={innerNavigation}
-        />
-      </TouchableOpacity>
+      <TopBar
+        Title="Create an organization"
+        hasReturnButton={true}
+        returnFunction={innerNavigation}
+      />
       {activeInnerPage === 0 && (
-        <Screen2
-          userInfo={userInfo}
+        <Screen0
+          userInfo={orgInfo}
           setActiveInnerPage={setActiveInnerPage}
           onChangeOrgName={onChangeOrgName}
           setErrorInForm={setErrorInForm}
+          setOrgType={onChangeType}
+          onChangeOrgOfficeName={onChangeOrgOfficeName}
         />
       )}
+
       {activeInnerPage === 1 && (
         <Screen1
-          userInfo={userInfo}
+          userInfo={orgInfo}
           setActiveInnerPage={setActiveInnerPage}
           onChangeAddress={onChangeAddress}
           setErrorInForm={setErrorInForm}
         />
       )}
       {activeInnerPage === 2 && (
-        <Screen0
+        <Screen2
           onChangeEmailFunction={onChangeEmail}
-          userInfo={userInfo}
+          userInfo={orgInfo}
           setActiveInnerPage={setActiveInnerPage}
           setErrorInForm={setErrorInForm}
         />
@@ -215,19 +231,20 @@ export default function CreateOrg() {
             onChangeOTP={onChangeOTP}
           />
         )}
-      {activeInnerPage === 4 && <Screen4 userInfo={userInfo} />}
+      {activeInnerPage === 4 && <Screen4 userInfo={orgInfo} />}
       {errorInForm && <Text style={styles.Error}>{errorInForm}</Text>}
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "white",
+    backgroundColor: "#F5FCFF",
+
     alignItems: "center",
-    paddingTop: 120,
-    paddingBottom: 50,
-    paddingHorizontal: 10,
+    paddingTop: 20,
+    paddingBottom: 20,
     color: "black",
   },
   Error: {
@@ -241,7 +258,7 @@ const styles = StyleSheet.create({
     top: 40,
     left: 10,
     padding: 10,
-    backgroundColor: "white",
+    backgroundColor: "#F5FCFF",
   },
   inputWrapper: {
     display: "flex",

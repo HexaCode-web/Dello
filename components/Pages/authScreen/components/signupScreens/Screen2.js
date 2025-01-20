@@ -4,50 +4,86 @@ import {
   StyleSheet,
   TouchableOpacity,
   TextInput,
+  ScrollView,
 } from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { Feather } from "@expo/vector-icons";
+
 import { COLORS, FONTS } from "../../../../../theme";
 export default function Screen2({
   userInfo,
   onChangeFirstName,
   onChangeLastName,
-  setActiveInnerPage,
-  setErrorInForm,
+  onDateChange,
+  onChangeAddress,
+  showDatePicker,
+  navigation,
+  setShowDatePicker,
+  sendOTP,
 }) {
   return (
-    <>
-      <View style={styles.textWrapper}>
-        <Text style={styles.Header}>Personal information</Text>
-      </View>
+    <ScrollView>
+      <Text style={styles.Header}>Personal information</Text>
+
       <View style={styles.inputsWrapper}>
         <View style={styles.inputWrapper}>
-          <Text style={styles.signUpPromptText}>First name</Text>
           <TextInput
+            placeholder="First Name"
             style={styles.input}
             onChangeText={(value) => onChangeFirstName(value)}
             value={userInfo.FirstName}
           />
         </View>
         <View style={styles.inputWrapper}>
-          <Text style={styles.signUpPromptText}>Last name</Text>
           <TextInput
+            placeholder="Last name"
             style={styles.input}
             onChangeText={(value) => onChangeLastName(value)}
             value={userInfo.LastName}
           />
         </View>
+        <View style={styles.inputWrapper}>
+          <TextInput
+            placeholder="Address"
+            style={styles.input}
+            onChangeText={(value) => onChangeAddress(value)}
+            value={userInfo.Address}
+          />
+        </View>
+        <>
+          <View style={styles.datePickerContainer}>
+            <TextInput
+              style={[styles.input, { width: 310 }]}
+              value={userInfo.DOB ? userInfo.DOB.toDateString() : ""} // Handle empty value
+              editable={false}
+              placeholder="Date of Birth"
+            />
+            <TouchableOpacity onPress={() => setShowDatePicker(true)}>
+              <Feather name="calendar" size={24} color="gray" />
+            </TouchableOpacity>
+          </View>
+          {showDatePicker && (
+            <DateTimePicker
+              value={userInfo.DOB || new Date()} // Fallback to current date if DOB is null
+              mode="date"
+              display="default"
+              onChange={onDateChange}
+            />
+          )}
+        </>
       </View>
       <View style={styles.buttonWrapper}>
         <TouchableOpacity
-          onPress={() => {
-            setActiveInnerPage(3);
-            setErrorInForm("");
+          onPress={async () => {
+            navigation.navigate("Signup", { screen: "Screen3" });
+            await sendOTP();
           }}
           style={styles.DefaultButton}
         >
           <Text style={styles.buttonText}>Continue</Text>
         </TouchableOpacity>
       </View>
-    </>
+    </ScrollView>
   );
 }
 const styles = StyleSheet.create({
@@ -70,10 +106,10 @@ const styles = StyleSheet.create({
     borderRadius: 30,
   },
   Header: {
-    width: "100%",
     fontSize: FONTS.large,
     fontFamily: FONTS.familyBold,
-    marginBottom: 10,
+    marginBottom: 20,
+    marginLeft: 40,
   },
   textWrapper: {
     marginBottom: 20,
@@ -115,7 +151,10 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
-
+  datePickerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
   buttonText: {
     fontSize: FONTS.medium,
     fontFamily: FONTS.familyBold,

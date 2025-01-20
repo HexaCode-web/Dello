@@ -6,6 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  Alert,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Feather } from "@expo/vector-icons";
@@ -13,8 +14,10 @@ import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
 import { COLORS, FONTS } from "../../../../theme";
 import { updateUserData } from "../../../redux/slices/authSlice";
+import { useNavigation } from "@react-navigation/native";
 
-const PresentRole = ({ data, setActivePage }) => {
+const PresentRole = ({ data }) => {
+  const navigation = useNavigation();
   const User = useSelector((state) => state.auth.user);
 
   const dispatch = useDispatch();
@@ -67,6 +70,8 @@ const PresentRole = ({ data, setActivePage }) => {
     } catch (error) {
       console.log(error);
       setError(error.message);
+      Alert.alert("Error", error.message);
+      return;
     }
   };
 
@@ -83,12 +88,12 @@ const PresentRole = ({ data, setActivePage }) => {
       <Text style={styles.label}>Company</Text>
       <TextInput
         style={[styles.input, saved && { color: COLORS.secondary }]}
-        placeholder="Some text here..."
+        placeholder="Company"
         value={company}
         onChangeText={setCompany}
       />
 
-      <Text style={styles.label}>When</Text>
+      <Text style={styles.label}>From</Text>
       <View style={styles.datePickerContainer}>
         <TextInput
           style={[styles.input, saved && { color: COLORS.secondary }]}
@@ -114,7 +119,7 @@ const PresentRole = ({ data, setActivePage }) => {
         <TouchableOpacity
           onPress={async () => {
             await savePresentRoleDetails();
-            setActivePage("BusinessDrivers");
+            navigation.navigate("Settings", { screen: "Business Drivers" });
           }}
           style={styles.DefaultButton}
         >
@@ -137,7 +142,8 @@ const styles = StyleSheet.create({
     width: "95%",
     marginHorizontal: "auto",
     padding: 20,
-    backgroundColor: "white",
+    backgroundColor: "#F5FCFF",
+
     gap: 20,
   },
   label: {

@@ -8,12 +8,9 @@ import {
 } from "react-native";
 import { FONTS, COLORS } from "../../../../theme";
 import { useNavigation } from "@react-navigation/native";
-import { useDispatch } from "react-redux";
-import { setActiveSettingsPage } from "../../../redux/slices/activeSettingsPage";
 
 export default function Skills({ data }) {
   const navigation = useNavigation();
-  const dispatch = useDispatch();
   const renderItem = ({ item }) => (
     <View>
       <Text style={styles.text}>
@@ -39,8 +36,7 @@ export default function Skills({ data }) {
     <TouchableOpacity
       style={styles.container}
       onPress={() => {
-        dispatch(setActiveSettingsPage("Skills"));
-        navigation.navigate("Settings");
+        navigation.navigate("Settings", { screen: "Skills" });
       }}
     >
       {data && data.length > 0 ? (

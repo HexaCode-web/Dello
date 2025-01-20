@@ -2,18 +2,33 @@ import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
 import { FONTS, COLORS } from "../../../../theme";
 import { FlatList } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { useDispatch } from "react-redux";
-import { setActiveSettingsPage } from "../../../redux/slices/activeSettingsPage";
 
 export default function Education({ data }) {
   const navigation = useNavigation();
-  const dispatch = useDispatch();
   const renderItem = ({ item }) => {
     const startDate = new Date(item.StartDate);
     const endDate = new Date(item.EndDate);
-    const formattedStartDate = startDate.toISOString().split("T")[0];
-    const formattedEndDate = endDate.toISOString().split("T")[0];
+    let formattedStartDate = "N/A";
+    let formattedEndDate = "N/A";
+    if (item.StartDate) {
+      const startDate = new Date(item.StartDate);
+      if (!isNaN(startDate)) {
+        const options = { year: "numeric", month: "short" };
+        formattedStartDate = new Intl.DateTimeFormat("en-US", options).format(
+          startDate
+        );
+      }
+    }
 
+    if (item.EndDate) {
+      const endDate = new Date(item.EndDate);
+      if (!isNaN(endDate)) {
+        const options = { year: "numeric", month: "short" };
+        formattedEndDate = new Intl.DateTimeFormat("en-US", options).format(
+          endDate
+        );
+      }
+    }
     return (
       <View>
         <Text style={styles.text}>
@@ -45,8 +60,7 @@ export default function Education({ data }) {
     <TouchableOpacity
       style={styles.container}
       onPress={() => {
-        dispatch(setActiveSettingsPage("Education"));
-        navigation.navigate("Settings");
+        navigation.navigate("Settings", { screen: "Education" });
       }}
     >
       {data && data.length > 0 ? (
