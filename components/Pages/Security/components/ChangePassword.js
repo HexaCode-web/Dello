@@ -10,7 +10,6 @@ import {
 } from "react-native";
 import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
-import { updateUserData } from "../../../redux/slices/authSlice";
 import { COLORS, FONTS } from "../../../../theme";
 export default function ChangePassword() {
   const dispatch = useDispatch();
@@ -88,18 +87,8 @@ export default function ChangePassword() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5FCFF",
+  },
 
-    alignItems: "center",
-    paddingTop: 120,
-    paddingBottom: 20,
-    paddingHorizontal: 10,
-  },
-  screenContainer: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-  },
   Error: {
     color: "red",
     textAlign: "center",

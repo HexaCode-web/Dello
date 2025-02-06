@@ -8,7 +8,7 @@ export default function HomeScreen() {
   const tabsAr = [
     { Name: "Security", Page: "Security" },
     { Name: "Profile", Page: "Profile" },
-    { Name: "Profiles", Page: "Profiles" },
+    { Name: "Settings", Page: "Profiles" },
     { Name: "Organisation", Page: "Organizations" },
   ];
 
@@ -24,9 +24,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F5FCFF",
+    paddingHorizontal: 20,
 
-    alignItems: "center",
-    paddingTop: 20,
+    paddingTop: 0,
     paddingBottom: 20,
     justifyContent: "space-between",
     color: "black",

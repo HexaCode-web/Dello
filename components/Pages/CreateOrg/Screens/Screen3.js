@@ -34,7 +34,7 @@ export default function Screen3({ sendOTP, onChangeOTP, finalizeSignUp }) {
           }}
           style={styles.DefaultButton}
         >
-          <Text style={styles.buttonText}>Sign up</Text>
+          <Text style={styles.buttonText}>Create Organization</Text>
         </TouchableOpacity>
       </View>
     </>

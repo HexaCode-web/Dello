@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  Switch,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { COLORS, FONTS } from "../../../../theme";
@@ -18,6 +19,20 @@ const NetworkItem = ({ network, onNetworkUpdate }) => {
   const [org, setOrg] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const isPartOfOrg = () => {
+    if (!User?.user.associatedEmails) return false;
+
+    return User?.user.associatedEmails.find(
+      (email) => email.OrgId === tempNetwork.orgId
+    );
+  };
+
+  const [isEnabled, setIsEnabled] = useState(
+    !network.Accepted.find((user) => user.userId === User.user._id)
+      ?.ManualInActive || null
+  );
+
   const [location, setLocation] = useState(false);
   const [activeNetwork, setActiveNetwork] = useState(true);
 
@@ -236,7 +251,61 @@ const NetworkItem = ({ network, onNetworkUpdate }) => {
   if (isDismissed) {
     return null;
   }
+  const toggleNetworkActive = async (value) => {
+    setLoading(true);
 
+    try {
+      const config = {
+        method: "put",
+        url: `${process.env.EXPO_PUBLIC_NETWORK_API}/ToggleActivity/${network._id}/${User.user._id}`,
+        headers: {
+          "Accept-Language": "en",
+          "Content-Type": "application/json",
+          authorization: `Bearer ${User.Token}`,
+        },
+        data: { isActive: value },
+      };
+      const response = await axios(config);
+
+      if (response.status === 200) {
+        setIsEnabled(value); // Update switch state
+        const updatedNetwork = response.data.network;
+        setTempNetwork(updatedNetwork);
+        onNetworkUpdate(updatedNetwork); // Notify parent of update
+        Alert.alert(
+          "Success",
+          `Network is now ${value ? "active" : "inactive"}`
+        );
+      }
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message || error.message || "An error occurred";
+      Alert.alert("Error", errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Render the switch for admins
+  const renderActivitySwitch = () => {
+    if (!isAccepted) return null;
+    return (
+      <View style={styles.switchContainer}>
+        <Text style={styles.switchLabel}>Become Visible:</Text>
+        <Switch
+          value={isEnabled}
+          onValueChange={toggleNetworkActive}
+          disabled={loading}
+          trackColor={{ false: "#767577", true: COLORS.secondary }}
+          thumbColor={isEnabled ? "#FFF" : "#FFF"}
+        />
+      </View>
+    );
+  };
+
+  if (!isPartOfOrg() && tempNetwork.type === "Private") {
+    return;
+  }
   return (
     <View
       style={[styles.container, !activeNetwork && styles.disabledContainer]}
@@ -270,12 +339,14 @@ const NetworkItem = ({ network, onNetworkUpdate }) => {
           <Text style={styles.detailLabel}>Size:</Text>
           <Text style={styles.detailText}>{network.size} members</Text>
         </View>
+
         <View style={styles.detailRow}>
           <Text style={styles.detailLabel}>Duration:</Text>
           <Text style={styles.detailText}>
             {formatDate(network.startDate)} - {formatDate(network.endDate)}
           </Text>
         </View>
+        {renderActivitySwitch()}
       </View>
       {isAdmin ? (
         <View style={styles.emptyBtn}>
@@ -323,7 +394,7 @@ const NetworkItem = ({ network, onNetworkUpdate }) => {
 };
 const styles = StyleSheet.create({
   container: {
-    margin: 15,
+    marginVertical: 15,
     padding: 15,
     backgroundColor: "#fff",
     borderRadius: 10,
@@ -385,6 +456,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     width: 30,
     justifyContent: "space-between",
+  },
+  switchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 10,
+  },
+  switchLabel: {
+    fontFamily: FONTS.familyBold,
+    color: "#666",
+    fontSize: FONTS.medium,
   },
   tags: {
     flexDirection: "row",

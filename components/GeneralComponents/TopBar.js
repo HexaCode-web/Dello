@@ -5,12 +5,13 @@ import { useNavigation } from "@react-navigation/native";
 import { COLORS, FONTS } from "../../theme";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../redux/slices/authSlice";
+import FontAwesome from "@expo/vector-icons/FontAwesome";
 import AntDesign from "@expo/vector-icons/AntDesign";
 export default function TopBar({
   Tabs = [
     { Name: "Security", Page: "Security" },
     { Name: "Profile", Page: "Profile" },
-    { Name: "Profiles", Page: "Profiles" },
+    { Name: "Settings", Page: "Profiles" },
     { Name: "Organisation", Page: "Organizations" },
   ],
   hasReturnButton,
@@ -43,6 +44,8 @@ export default function TopBar({
         <TouchableOpacity
           style={styles.return}
           onPress={() => {
+            setShowMenu(false);
+
             if (returnFunction) {
               returnFunction(); // Execute the passed function if it exists
             } else if (returnTarget) {
@@ -52,22 +55,29 @@ export default function TopBar({
             }
           }}
         >
-          <AntDesign name="arrowleft" size={36} color={COLORS.secondary} />
+          <AntDesign name="arrowleft" size={30} color="white" />
         </TouchableOpacity>
       ) : (
-        <View style={styles.imageWrapper}>
-          <Image
-            source={require("../../assets/logodarkblue.png")}
-            style={styles.image}
-          />
-        </View>
+        <Text style={styles.logo}>D</Text>
       )}
       <Text style={styles.title}>{Title}</Text>
-      <HamburgerButton
-        onPress={() => {
-          setShowMenu((prev) => !prev);
-        }}
-      />
+      <View style={styles.iconWrapper}>
+        <FontAwesome
+          name="bell"
+          size={20}
+          color="white"
+          onPress={() => {
+            setShowMenu(false);
+
+            navigation.navigate("NotificationsScreen");
+          }}
+        />
+        <HamburgerButton
+          onPress={() => {
+            setShowMenu((prev) => !prev);
+          }}
+        />
+      </View>
       {showMenu && (
         <View style={styles.dropDown}>
           {RenderTabs()}
@@ -89,17 +99,39 @@ export default function TopBar({
 }
 const styles = StyleSheet.create({
   topBar: {
+    position: "relative",
+    top: -10,
     display: "flex",
     justifyContent: "space-between",
-    width: "100%",
-    height: 50,
+    width: "115%",
+    right: "7.5%",
+    height: 90,
+    paddingHorizontal: 15,
+    paddingTop: 10,
+    paddingBottom: 10,
     flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
+    alignItems: "flex-end",
 
-    backgroundColor: "#F5FCFF",
+    backgroundColor: COLORS.secondary,
 
     zIndex: 1000,
+  },
+  iconWrapper: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: 100,
+  },
+  return: {
+    marginLeft: 20,
+    paddingBottom: 5,
+  },
+  logo: {
+    fontSize: FONTS.large,
+    fontFamily: FONTS.familyBold,
+    color: "white",
+    paddingBottom: 7,
+    marginLeft: 20,
   },
   title: {
     fontSize: FONTS.large,
@@ -114,7 +146,7 @@ const styles = StyleSheet.create({
   dropDown: {
     zIndex: 1000,
     position: "absolute",
-    top: 50,
+    top: 70,
     right: 30,
     padding: 15,
     borderRadius: 15,

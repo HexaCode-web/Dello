@@ -5,10 +5,9 @@ import { useCallback, useState } from "react";
 import axios from "axios";
 import { COLORS, FONTS } from "../../../../theme";
 import NetworkItem from "./NetworkItem"; // Import the separated component
+import sortBy from "sort-by";
 
 export default function OldNetworks({ OrgId, setActivePage, activePage }) {
-  console.log(OrgId);
-
   const User = useSelector((state) => state.auth.user);
   const [oldNetworks, setOldNetworks] = useState([]);
 
@@ -24,7 +23,22 @@ export default function OldNetworks({ OrgId, setActivePage, activePage }) {
         },
       };
       const response = await axios(config);
-      setOldNetworks(response.data);
+      response.data.forEach((OldNetwork) => {
+        const endDate = new Date(OldNetwork.endDate);
+        const currentDate = new Date();
+
+        // Normalize the dates to compare only the date part
+        const isPastDate =
+          endDate.getFullYear() < currentDate.getFullYear() ||
+          (endDate.getFullYear() === currentDate.getFullYear() &&
+            endDate.getMonth() < currentDate.getMonth()) ||
+          (endDate.getFullYear() === currentDate.getFullYear() &&
+            endDate.getMonth() === currentDate.getMonth() &&
+            endDate.getDate() < currentDate.getDate());
+        OldNetwork.isPastDate = isPastDate;
+      });
+
+      setOldNetworks(response.data.sort(sortBy("isPastDate")));
     } catch (error) {
       if (error.message === "Request failed with status code 400") {
         setOldNetworks([]);
@@ -67,6 +81,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F5FCFF",
     width: "100%",
     color: "black",
+    marginTop: 20,
   },
   header: {
     fontSize: FONTS.large,
@@ -76,7 +91,6 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     width: "100%",
-    paddingHorizontal: 20,
   },
   noData: {
     fontSize: 16,

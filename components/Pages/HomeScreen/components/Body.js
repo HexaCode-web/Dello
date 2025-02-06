@@ -31,6 +31,8 @@ const Body = () => {
   const User = useSelector((state) => state.auth.user);
   const [error, setError] = useState(null);
   const [members, setMembers] = useState([]);
+  const { location } = useSelector((state) => state.location);
+  console.log(meetRequestsUsers);
 
   const fetchMembers = async () => {
     setMeetRequests([]);
@@ -44,7 +46,12 @@ const Body = () => {
           },
         }
       );
-      return { ...userResponse.data, userId: member.userId };
+      return {
+        ...userResponse.data,
+        userId: member.userId,
+        Active: member.Active,
+        ManualInActive: member.ManualInActive,
+      };
     });
     setMembers([]);
     const members = await Promise.all(memberPromises);
@@ -55,61 +62,155 @@ const Body = () => {
   const fetchNetworkDetails = async () => {
     setLoading(true);
     setError(null);
-
+    setSelectedNetwork(null);
     try {
-      if (!User?.user?.joinedNetworks) {
+      if (
+        !User?.user?.joinedNetworks ||
+        User.user.joinedNetworks.length === 0
+      ) {
         setNetworkDetails([]);
         setError("No networks found");
         return;
       }
 
-      const networkPromises = User.user.joinedNetworks.map(async (network) => {
-        const response = await axios.get(
-          `${process.env.EXPO_PUBLIC_NETWORK_API}/getNetwork/${network.networkId}`,
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
+      if (!location?.coords) {
+        setError("Location not available");
+        return;
+      }
+
+      const networkDetails = await fetchAllNetworkDetails(
+        User.user.joinedNetworks,
+        location.coords
+      );
+
+      const activeNetworks = networkDetails.filter((network) => network.Active);
+      const proximityNetworks = activeNetworks.filter(
+        (network) => network.isInProximity
+      );
+
+      updateAvailableUsers(proximityNetworks, networkDetails.length);
+
+      // Stable sort by distance, then by a secondary key (e.g., network name or ID)
+      const sortedNetworks = proximityNetworks.sort((a, b) => {
+        if (a.distance === b.distance) {
+          // Use a secondary key to ensure stable sorting
+          return a.name.localeCompare(b.name); // Sort by name if distance is the same
+        }
+        return a.distance - b.distance; // Sort by distance
+      });
+
+      setNetworkDetails(sortedNetworks);
+
+      if (sortedNetworks.length > 0) {
+        const networkToSelect = sortedNetworks[0];
+        setSelectedNetwork(networkToSelect);
+      } else {
+        setSelectedNetwork(null);
+      }
+    } catch (error) {
+      handleError(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  const fetchAllNetworkDetails = async (networks, coords) => {
+    const networkPromises = networks.map(async (network) => {
+      try {
+        const networkResponse = await fetchNetwork(network.networkId);
+        const orgDetails = await fetchOrganizationDetails(
+          networkResponse.data.orgId,
+          User.Token
         );
-        const orgDetails = await axios.get(
-          `${process.env.EXPO_PUBLIC_ORG_API}/${response.data.orgId}`,
-          {
-            headers: {
-              "Accept-Language": "en",
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${User.Token}`,
-            },
-          }
+
+        const distance = calculateDistance(
+          coords.latitude,
+          coords.longitude,
+          networkResponse.data.coordinates.coordinates[1],
+          networkResponse.data.coordinates.coordinates[0]
         );
+
+        const endDate = new Date(networkResponse.data.endDate);
+        const currentDate = new Date();
+        const isPastDate =
+          endDate.getFullYear() < currentDate.getFullYear() ||
+          (endDate.getFullYear() === currentDate.getFullYear() &&
+            endDate.getMonth() < currentDate.getMonth()) ||
+          (endDate.getFullYear() === currentDate.getFullYear() &&
+            endDate.getMonth() === currentDate.getMonth() &&
+            endDate.getDate() < currentDate.getDate());
+
         return {
           _id: network._id,
           OrgDetails: orgDetails.data,
           networkId: network.networkId,
-          name: response.data.name,
-          ...response.data,
+          name: networkResponse.data.name,
+          isInProximity: distance < networkResponse.data.radius,
+          distance: distance.toFixed(0),
+          Active: !isPastDate,
+          ...networkResponse.data,
         };
-      });
-
-      const details = await Promise.all(networkPromises);
-      setAvailableUsers(0);
-      details.forEach((network) => {
-        setAvailableUsers((prev) => prev + network.Accepted.length);
-      });
-      setAvailableUsers((prev) => prev - networkPromises.length);
-      setNetworkDetails(details);
-
-      if (!selectedNetwork && details.length > 0) {
-        setSelectedNetwork(details[0]);
+      } catch (networkError) {
+        console.log(
+          `Error fetching network ${network.networkId}:`,
+          networkError
+        );
+        return null;
       }
-    } catch (error) {
-      console.error("Error fetching network details:", error);
-      setError(
-        error.response?.data?.message || "Failed to fetch network details"
-      );
-    } finally {
-      setLoading(false);
-    }
+    });
+
+    const details = await Promise.all(networkPromises);
+    return details.filter((network) => network !== null);
+  };
+
+  const fetchNetwork = async (networkId) => {
+    return await axios.get(
+      `${process.env.EXPO_PUBLIC_NETWORK_API}/getNetwork/${networkId}`,
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  };
+
+  const fetchOrganizationDetails = async (orgId, token) => {
+    return await axios.get(`${process.env.EXPO_PUBLIC_ORG_API}/${orgId}`, {
+      headers: {
+        "Accept-Language": "en",
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  };
+
+  const updateAvailableUsers = (proximityNetworks, totalNetworks) => {
+    // Use a Set to store unique user IDs
+    const uniqueUserIds = new Set();
+
+    // Iterate through each network and add unique user IDs to the Set
+    proximityNetworks.forEach((network) => {
+      if (network.Accepted && network.Accepted.length > 0) {
+        network.Accepted.forEach((user) => {
+          // Assuming each user object has a unique `_id` property
+          if (user.userId) {
+            uniqueUserIds.add(user.userId);
+          }
+        });
+      }
+    });
+
+    // Calculate the total number of unique users
+    const totalAvailableUsers = uniqueUserIds.size;
+
+    // Update the available users, ensuring it doesn't go below 0
+    setAvailableUsers(Math.max(0, totalAvailableUsers - 1));
+  };
+
+  const handleError = (error) => {
+    console.error("Error fetching network details:", error);
+    setError(
+      error.response?.data?.message ||
+        error.message ||
+        "Failed to fetch network details"
+    );
   };
   const fetchMeetRequestsForUser = async (userIDB, networkID) => {
     try {
@@ -120,7 +221,12 @@ const Body = () => {
 
       const apiUrl = `${process.env.EXPO_PUBLIC_MEET_API}/getMeetRequestForUser/${userIDB}/${networkID}`;
 
-      const response = await axios.get(apiUrl);
+      const response = await axios.get(apiUrl, {
+        headers: {
+          "Accept-Language": "en",
+          "Content-Type": "application/json",
+        },
+      });
 
       // Return the data from the response
       return response.data;
@@ -129,7 +235,6 @@ const Body = () => {
 
       // Handle errors appropriately
       if (error.response) {
-        console.error("Server response:", error.response.data);
         throw new Error(error.response.data.message || "Server error");
       } else if (error.request) {
         console.error("No response received:", error.request);
@@ -174,17 +279,43 @@ const Body = () => {
   useFocusEffect(
     useCallback(() => {
       fetchNetworkDetails();
-    }, [])
+    }, [location])
   );
 
   const tabData = [
     { id: "2", title: "Meet", Count: meetRequests?.length },
     { id: "3", title: "Intros", Count: 0 },
-    { id: "1", title: "All", Count: selectedNetwork?.Accepted.length },
+    {
+      id: "1",
+      title: "All",
+      Count: selectedNetwork?.Accepted.filter(
+        (user) => user.Active === true && user.ManualInActive === false
+      ).length,
+    },
   ];
+  function calculateDistance(lat1, lng1, lat2, lng2) {
+    const toRad = (value) => (value * Math.PI) / 180;
 
+    const R = 6371e3; // Earth's radius in meters
+    const φ1 = toRad(lat1);
+    const φ2 = toRad(lat2);
+    const Δφ = toRad(lat2 - lat1);
+    const Δλ = toRad(lng2 - lng1);
+
+    const a =
+      Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c; // Distance in meters
+  }
   const renderMeetingItem = ({ item }) => {
-    if (item.userId === User.user._id) return null;
+    if (
+      activeTab !== "Meet" &&
+      (item.ManualInActive || !item.Active || item.userId === User.user._id)
+    ) {
+      return null;
+    }
     return (
       <TouchableOpacity
         style={styles.meetingItem}
@@ -235,7 +366,12 @@ const Body = () => {
             source={require("../../../../assets/sperator.png")}
             style={styles.sperator}
           />{" "}
-          {item.name}
+          {item.name}{" "}
+          <Image
+            source={require("../../../../assets/sperator.png")}
+            style={styles.sperator}
+          />{" "}
+          {item.Accepted.length - 1}
         </Text>
       </TouchableOpacity>
     );
@@ -309,24 +445,27 @@ const Body = () => {
         </TouchableOpacity>
       </Modal>
 
-      <View style={styles.tabContainer}>
-        {tabData.map((item) => (
-          <TouchableOpacity
-            key={item.id}
-            style={[styles.tab, activeTab === item.title && styles.activeTab]}
-            onPress={() => setActiveTab(item.title)}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === item.title && styles.activeTabText,
-              ]}
+      {selectedNetwork && (
+        <View style={styles.tabContainer}>
+          {tabData.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={[styles.tab, activeTab === item.title && styles.activeTab]}
+              onPress={() => setActiveTab(item.title)}
             >
-              {item.title} - {item.Count}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === item.title && styles.activeTabText,
+                ]}
+              >
+                {item.title} - {item.Count}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+
       {members.length > 1 ? (
         <>
           {activeTab === "Meet" && meetRequestsUsers && (
@@ -361,9 +500,11 @@ const Body = () => {
           )}
         </>
       ) : (
-        <Text style={styles.Result}>
-          no members in this network other than you
-        </Text>
+        selectedNetwork && (
+          <Text style={styles.Result}>
+            no members in this network other than you
+          </Text>
+        )
       )}
     </View>
   );
@@ -383,7 +524,7 @@ const styles = StyleSheet.create({
   },
   availableUsersCount: {
     right: 15,
-    top: -25,
+    top: -15,
     position: "absolute",
     backgroundColor: COLORS.secondary,
     width: 25,

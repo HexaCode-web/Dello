@@ -7,10 +7,11 @@ import {
   Alert,
 } from "react-native";
 import { COLORS, FONTS } from "../../../../theme";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import axios from "axios";
 import DropdownSlider from "../../../GeneralComponents/DropdownSlider";
 import { useSelector } from "react-redux";
+import { useFocusEffect } from "@react-navigation/native";
 
 export default function Settings({ org, setOrgData }) {
   const [loading, setLoading] = useState(false);
@@ -21,6 +22,8 @@ export default function Settings({ org, setOrgData }) {
     type: org.type || "",
     address: org.address || "",
   });
+  const [domainUsers, setDomainUsers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
   const [error, setError] = useState("");
 
   const typeData = [
@@ -83,6 +86,70 @@ export default function Settings({ org, setOrgData }) {
       setLoading(false);
     }
   };
+  useFocusEffect(
+    useCallback(async () => {
+      const Domain = org.domain;
+      const fetchUsersByDomain = async (domain) => {
+        try {
+          const response = await axios.get(
+            `${process.env.EXPO_PUBLIC_PROFILE_API}/GetByDomain/${domain}`
+          );
+          const adminEmails = org.admins.map((admin) => admin.Email);
+
+          const filteredUsers = response.data.users.filter((user) => {
+            const isAdmin =
+              adminEmails.includes(user.email) ||
+              user.associatedEmails.some((associatedEmail) =>
+                adminEmails.includes(associatedEmail.email)
+              );
+
+            return !isAdmin;
+          });
+
+          setDomainUsers(filteredUsers);
+        } catch (error) {
+          console.error("Error fetching users:", error);
+          throw error;
+        }
+      };
+      await fetchUsersByDomain(Domain);
+    }, [])
+  );
+  const InviteUser = async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await axios.post(
+        `${process.env.EXPO_PUBLIC_ORG_API}/addAdmin`,
+        {
+          email: selectedUser.Email,
+          id: selectedUser._id,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${User.Token}`,
+          },
+        }
+      );
+
+      // Handle the response
+      if (response.status === 200) {
+        console.log("Admin added successfully:", response.data);
+        Alert.alert("Success", "Admin invitation sent successfully!");
+        setSelectedUser(null);
+      } else {
+        throw new Error(response.data.message || "Failed to send invitation");
+      }
+    } catch (error) {
+      console.error("Error inviting user:", error);
+      setError(error.response?.data?.message || error.message);
+      Alert.alert("Error", error.response?.data?.message || error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -137,8 +204,42 @@ export default function Settings({ org, setOrgData }) {
             multiline
           />
         </View>
-      </View>
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Invite Admins</Text>
+          <DropdownSlider
+            data={domainUsers?.flatMap(
+              (user) =>
+                user.associatedEmails
+                  .filter((email) => email.email.endsWith(`@${org.domain}`)) // Filter by domain
+                  .map((email) => email.email) // Extract the email value
+            )}
+            placeholder={selectedUser?.Email || "Select User"}
+            onSelect={(item) => {
+              const selectedUser = domainUsers.find((user) =>
+                user.associatedEmails.filter((Email) => Email.email === item)
+              );
 
+              setSelectedUser({
+                _id: selectedUser._id,
+                Email: selectedUser.associatedEmails.find(
+                  (Email) => Email.email === item
+                ).email,
+              });
+            }}
+          />
+        </View>
+      </View>
+      {selectedUser && (
+        <View style={styles.buttonWrapper}>
+          <TouchableOpacity
+            style={[styles.DefaultButton, loading && styles.disabledButton]}
+            onPress={InviteUser}
+            disabled={loading}
+          >
+            <Text style={styles.buttonText}>Invite</Text>
+          </TouchableOpacity>
+        </View>
+      )}
       {error ? <Text style={styles.Error}>{error}</Text> : null}
 
       <View style={styles.buttonWrapper}>
@@ -160,12 +261,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F5FCFF",
-    alignItems: "center",
     justifyContent: "space-between",
     color: "black",
   },
   inputArea: {
-    width: "90%",
     margin: 20,
   },
   header: {

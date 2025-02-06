@@ -3,7 +3,7 @@ import { FONTS, COLORS } from "../../../../theme";
 import { FlatList } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 
-export default function Education({ data }) {
+export default function Education({ data, clickAble = true }) {
   const navigation = useNavigation();
   const renderItem = ({ item }) => {
     const startDate = new Date(item.StartDate);
@@ -56,7 +56,7 @@ export default function Education({ data }) {
       </View>
     );
   };
-  return (
+  return clickAble ? (
     <TouchableOpacity
       style={styles.container}
       onPress={() => {
@@ -81,6 +81,31 @@ export default function Education({ data }) {
         <Text style={styles.placeHolder}>Education</Text>
       )}
     </TouchableOpacity>
+  ) : (
+    <View
+      style={styles.container}
+      onPress={() => {
+        navigation.navigate("Settings", { screen: "Education" });
+      }}
+    >
+      {data && data.length > 0 ? (
+        <>
+          <Image
+            source={require("../../../../assets/Education.png")}
+            style={styles.image}
+          />
+          <FlatList
+            data={data}
+            keyExtractor={(item) => item._id}
+            renderItem={renderItem}
+            style={styles.list}
+            ItemSeparatorComponent={() => <View style={{ height: 6 }} />}
+          />
+        </>
+      ) : (
+        <Text style={styles.placeHolder}>Education</Text>
+      )}
+    </View>
   );
 }
 const styles = StyleSheet.create({
@@ -121,5 +146,8 @@ const styles = StyleSheet.create({
     marginLeft: 20,
     color: COLORS.textSecondary,
     fontFamily: FONTS.familyBold,
+    flexWrap: "wrap", // Allow text to wrap
+    flexShrink: 1, // Allow the text to shrink if necessary
+    width: "60%", // Ensure the text container takes up the available width
   },
 });

@@ -1,3 +1,4 @@
+import React, { useState, useCallback, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -6,14 +7,14 @@ import {
   TouchableOpacity,
   Text,
   Alert,
+  Modal,
+  TextInput,
 } from "react-native";
 import TopBar from "../../GeneralComponents/TopBar";
 import Header from "../Profile/components/Header";
-import { useCallback, useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import PresentRole from "../Profile/components/PresentRole";
 import { useFocusEffect } from "@react-navigation/native";
-import React from "react";
 import BusinessDriver from "../Profile/components/BusinessDriver";
 import HighLights from "../Profile/components/HighLights";
 import Education from "../Profile/components/Education";
@@ -24,16 +25,22 @@ import axios from "axios";
 import { COLORS, FONTS } from "../../../theme";
 
 export default function ViewProfile({ route }) {
-  const { ProfileID, networkId, meetingRequest } = route.params;
+  const { ProfileID, networkId, meetingRequest = null } = route.params;
+  console.log(networkId);
+
   const [previousMeetingRequest, setPreviousMeetingRequest] = useState(null);
   const [User, setUser] = useState(null);
-  const [loading, setLoading] = useState(true); // Loading state
+  const [loading, setLoading] = useState(true);
   const activeUser = useSelector((state) => state.auth.user);
   const [requestOwner, setRequestOwner] = useState(null);
+  const [network, setNetwork] = useState(null);
+  const [isModalVisible, setIsModalVisible] = useState(false); // State for modal visibility
+  const [meetingPurpose, setMeetingPurpose] = useState(""); // State for meeting purpose input
+
   const tabsAr = [
     { Name: "Security", Page: "Security" },
     { Name: "Profile", Page: "Profile" },
-    { Name: "Profiles", Page: "Profiles" },
+    { Name: "Settings", Page: "Profiles" },
     { Name: "Organisation", Page: "Organizations" },
   ];
 
@@ -56,9 +63,10 @@ export default function ViewProfile({ route }) {
     } catch (error) {
       console.error("Error fetching admin profile:", error.message);
     } finally {
-      setLoading(false); // Stop loading once data is fetched
+      setLoading(false);
     }
   };
+
   const getMeetRequest = async () => {
     try {
       const response = await axios.get(
@@ -67,19 +75,33 @@ export default function ViewProfile({ route }) {
           params: {
             userIDA: ProfileID,
             userIDB: activeUser.user._id,
-            networkID: networkId,
           },
           headers: {
-            Authorization: `Bearer ${activeUser.Token}`, // Replace with your actual token
+            Authorization: `Bearer ${activeUser.Token}`,
           },
         }
       );
+      const network = await axios.get(
+        `${process.env.EXPO_PUBLIC_NETWORK_API}/getNetwork/${networkId}`
+      );
+      setNetwork(network.data);
       setPreviousMeetingRequest(response.data.data);
     } catch (error) {
       console.error("Error fetching meeting request:", error);
+      setPreviousMeetingRequest(null);
     }
   };
+
+  const handleCreateMeetingRequest = () => {
+    setIsModalVisible(true); // Show the modal for meeting purpose
+  };
+
   const CreateMeetingRequest = async () => {
+    if (!meetingPurpose.trim()) {
+      Alert.alert("Error", "Please enter a purpose for the meeting.");
+      return;
+    }
+
     try {
       const response = await axios.post(
         `${process.env.EXPO_PUBLIC_MEET_API}/CreateMeetRequest`,
@@ -87,7 +109,8 @@ export default function ViewProfile({ route }) {
           networkID: networkId,
           userIDA: activeUser.user._id,
           userIDB: ProfileID,
-          purpose: "Discuss project updates",
+          senderName: `${activeUser?.user.FirstName} ${activeUser?.user.LastName}`,
+          purpose: meetingPurpose, // Use the input from the modal
         },
         {
           headers: {
@@ -99,15 +122,16 @@ export default function ViewProfile({ route }) {
 
       Alert.alert("Success", "Meeting request created successfully");
       setPreviousMeetingRequest(response.data.data);
+      setIsModalVisible(false); // Close the modal
+      setMeetingPurpose(""); // Clear the input
     } catch (error) {
       console.error("Error creating meeting request:", error);
-
       const errorMessage =
         error.response?.data?.message || "An unknown error occurred";
-
       Alert.alert("Error", errorMessage);
     }
   };
+
   const AcceptMeetingRequest = async () => {
     try {
       const response = await axios.put(
@@ -124,13 +148,12 @@ export default function ViewProfile({ route }) {
       setPreviousMeetingRequest(response.data.data);
     } catch (error) {
       console.error("Error creating meeting request:", error);
-
       const errorMessage =
         error.response?.data?.message || "An unknown error occurred";
-
       Alert.alert("Error", errorMessage);
     }
   };
+
   const rejectMeetingRequest = async () => {
     try {
       const response = await axios.put(
@@ -147,33 +170,33 @@ export default function ViewProfile({ route }) {
       setPreviousMeetingRequest(null);
     } catch (error) {
       console.error("Error creating meeting Rejected:", error);
-
       const errorMessage =
         error.response?.data?.message || "An unknown error occurred";
-
       Alert.alert("Error", errorMessage);
     }
   };
+
   const renderItem = ({ item }) => {
     switch (item.type) {
       case "ImmediateNeeds":
-        return <ImmediateNeeds data={item.data} />;
+        return <ImmediateNeeds data={item.data} clickAble={false} />;
       case "PresentRole":
-        return <PresentRole data={item.data} />;
+        return <PresentRole data={item.data} clickAble={false} />;
       case "BusinessDriver":
-        return <BusinessDriver data={item.data} />;
+        return <BusinessDriver data={item.data} clickAble={false} />;
       case "HighLights":
-        return <HighLights data={item.data} />;
+        return <HighLights data={item.data} clickAble={false} />;
       case "Education":
-        return <Education data={item.data} />;
+        return <Education data={item.data} clickAble={false} />;
       case "PreviousRole":
-        return <PreviousRole data={item.data} />;
+        return <PreviousRole data={item.data} clickAble={false} />;
       case "Skills":
-        return <Skills data={item.data} />;
+        return <Skills data={item.data} clickAble={false} />;
       default:
         return null;
     }
   };
+
   const listData = [
     { type: "PresentRole", data: data?.presentRole },
     { type: "ImmediateNeeds", data: data?.ImmediateNeeds },
@@ -182,12 +205,13 @@ export default function ViewProfile({ route }) {
     { type: "Education", data: data?.education },
     { type: "PreviousRole", data: data?.previousRole },
     { type: "Skills", data: data?.skills },
-  ].filter((item) => item.data); // Filter out any sections without data
+  ].filter((item) => item.data);
+
   useFocusEffect(
     useCallback(() => {
       const fetchApis = async () => {
         try {
-          setLoading(true); // Start loading
+          setLoading(true);
           await getProfile(ProfileID);
           await getMeetRequest();
           setLoading(false);
@@ -197,9 +221,7 @@ export default function ViewProfile({ route }) {
       };
 
       fetchApis();
-
-      // No cleanup required, so we return nothing
-    }, [ProfileID]) // Ensure this dependency is correct
+    }, [ProfileID])
   );
 
   useEffect(() => {
@@ -237,6 +259,7 @@ export default function ViewProfile({ route }) {
       }
     }, [User])
   );
+
   return (
     <View style={styles.container}>
       <TopBar Tabs={tabsAr} hasReturnButton={true} />
@@ -251,12 +274,11 @@ export default function ViewProfile({ route }) {
             data={listData}
             keyExtractor={(item) => item.type}
             renderItem={renderItem}
-            contentContainerStyle={{ paddingBottom: 20 }} // Add bottom padding to the list
+            contentContainerStyle={{ paddingBottom: 20 }}
           />
-          {meetingRequest && (
+          {previousMeetingRequest ? (
             <View style={styles.buttonWrapper}>
               {requestOwner === "Accepted" && (
-                // Active user made the request
                 <View style={styles.emptyBtn}>
                   <Text style={styles.buttonTextEmpty}>
                     Meeting request already accepted
@@ -275,41 +297,81 @@ export default function ViewProfile({ route }) {
                 <>
                   <Text style={styles.indicatorText}>
                     {User.FirstName} {User.LastName} wants to meet with you
+                    through {network.name}
                   </Text>
                   <View style={styles.actionButtonsWrapper}>
                     <TouchableOpacity
                       onPress={AcceptMeetingRequest}
                       style={[styles.DefaultButton, styles.acceptButton]}
                     >
-                      <Text style={styles.buttonText}>
-                        Accept their request
-                      </Text>
+                      <Text style={styles.buttonText}>Accept</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={rejectMeetingRequest}
                       style={[styles.DefaultButton, styles.rejectButton]}
                     >
-                      <Text style={styles.rejectButtonText}>
-                        Reject their request
-                      </Text>
+                      <Text style={styles.rejectButtonText}>Reject</Text>
                     </TouchableOpacity>
                   </View>
                 </>
               )}
 
               {requestOwner === null && (
-                // No previous meeting request
                 <TouchableOpacity
-                  onPress={CreateMeetingRequest}
+                  onPress={handleCreateMeetingRequest}
                   style={[styles.DefaultButton, { width: "80%" }]}
                 >
                   <Text style={styles.buttonText}>Request to meet</Text>
                 </TouchableOpacity>
               )}
             </View>
+          ) : (
+            <View style={styles.buttonWrapper}>
+              <TouchableOpacity
+                onPress={handleCreateMeetingRequest}
+                style={[styles.DefaultButton, { width: "80%" }]}
+              >
+                <Text style={styles.buttonText}>Request to meet</Text>
+              </TouchableOpacity>
+            </View>
           )}
         </>
       )}
+
+      {/* Modal for Meeting Purpose */}
+      <Modal
+        visible={isModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setIsModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Enter Meeting Purpose</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Purpose of the meeting"
+              value={meetingPurpose}
+              onChangeText={setMeetingPurpose}
+              multiline
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                onPress={() => setIsModalVisible(false)}
+                style={[styles.modalButton, styles.cancelButton]}
+              >
+                <Text style={styles.modalButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={CreateMeetingRequest}
+                style={[styles.modalButton, styles.submitButton]}
+              >
+                <Text style={styles.modalButtonText}>Submit</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -318,9 +380,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F5FCFF",
-
-    paddingTop: 20,
-    paddingBottom: 20,
+    paddingTop: 0,
+    paddingHorizontal: 20,
     justifyContent: "flex-start",
   },
   loadingContainer: {
@@ -329,15 +390,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   buttonWrapper: {
-    marginVertical: 20,
+    marginVertical: 10,
     alignItems: "center",
   },
   DefaultButton: {
     borderRadius: 30,
-    height: 60,
+    height: 45,
     display: "flex",
     justifyContent: "center",
-    flexDirection: "row",
     alignItems: "center",
     marginBottom: 10,
     paddingHorizontal: 10,
@@ -349,7 +409,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   acceptButton: {
-    backgroundColor: COLORS.secondary, // Green for Accept
+    backgroundColor: COLORS.secondary,
   },
   rejectButton: {
     backgroundColor: "transparent",
@@ -367,9 +427,10 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   indicatorText: {
-    color: "#6C757D", // Grey text
+    color: "#6C757D",
     fontSize: 16,
     fontWeight: "bold",
+    textAlign: "center",
   },
   actionButtonsWrapper: {
     marginTop: 10,
@@ -392,5 +453,53 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.familyBold,
     textAlign: "center",
     color: COLORS.secondary,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContent: {
+    width: "80%",
+    backgroundColor: "#FFF",
+    borderRadius: 10,
+    padding: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 10,
+    textAlign: "center",
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#CCC",
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 20,
+    minHeight: 100,
+    textAlignVertical: "top",
+  },
+  modalButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  modalButton: {
+    flex: 1,
+    padding: 10,
+    borderRadius: 5,
+    alignItems: "center",
+    marginHorizontal: 5,
+  },
+  cancelButton: {
+    backgroundColor: "#CCC",
+  },
+  submitButton: {
+    backgroundColor: COLORS.secondary,
+  },
+  modalButtonText: {
+    color: "#FFF",
+    fontWeight: "bold",
   },
 });

@@ -18,8 +18,10 @@ const styles = StyleSheet.create({
   line: {
     width: 25,
     height: 3,
-    backgroundColor: "black",
+    backgroundColor: "white",
     marginVertical: 2,
+    marginRight: 20,
+
     borderRadius: 2,
   },
 });

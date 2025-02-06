@@ -18,7 +18,6 @@ export default function CreateNetwork({ orgId, setMainActivePage }) {
   const User = useSelector((state) => state.auth.user);
   const navigate = useNavigation();
   const [activePage, setActivePage] = useState(0);
-  console.log(activePage);
 
   const [errorInForm, setErrorInForm] = useState("");
   const [location, error] = useGetLocation();
@@ -132,7 +131,7 @@ export default function CreateNetwork({ orgId, setMainActivePage }) {
   };
   return (
     <View style={styles.container}>
-      <View style={styles.inputsWrapper}>
+      <View>
         {activePage === 0 && (
           <View style={styles.inputWrapper}>
             <TextInput
@@ -144,7 +143,7 @@ export default function CreateNetwork({ orgId, setMainActivePage }) {
           </View>
         )}
         {activePage === 1 && (
-          <>
+          <View style={styles.inputWrapper}>
             <Text style={styles.label}>Start Date</Text>
             <View style={styles.datePickerContainer}>
               <TextInput
@@ -164,10 +163,10 @@ export default function CreateNetwork({ orgId, setMainActivePage }) {
                 onChange={onDateChange}
               />
             )}
-          </>
+          </View>
         )}
         {activePage === 2 && (
-          <>
+          <View style={styles.inputWrapper}>
             <Text style={styles.label}>End Date</Text>
             <View style={styles.datePickerContainer}>
               <TextInput
@@ -187,7 +186,7 @@ export default function CreateNetwork({ orgId, setMainActivePage }) {
                 onChange={onDateChangeEnd}
               />
             )}
-          </>
+          </View>
         )}
         {activePage === 3 && (
           <View style={styles.inputWrapper}>
@@ -240,8 +239,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F5FCFF",
-
-    alignItems: "center",
+    marginTop: 50,
+    // justifyContent: "center",
   },
   Error: {
     color: "red",
@@ -310,6 +309,7 @@ const styles = StyleSheet.create({
   },
 
   buttonWrapper: {
+    marginTop: "auto",
     justifyContent: "center",
     alignItems: "center",
     height: 150,

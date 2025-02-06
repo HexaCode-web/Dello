@@ -84,7 +84,9 @@ const PreviousRoles = ({ navigation }) => {
       );
       if (response.status === 200) {
         dispatch(updateUserData(response.data));
-
+        setPosition("");
+        setCompany("");
+        setDate(new Date());
         Alert.alert("Saved", "Saved");
         setSaved(true);
       }
@@ -318,12 +320,6 @@ const PreviousRoles = ({ navigation }) => {
             style={styles.DefaultButton}
           >
             <Text style={styles.buttonText}>Next</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={savePresentRoleDetails}
-            style={styles.DefaultButton}
-          >
-            <Text style={styles.buttonText}>Save</Text>
           </TouchableOpacity>
         </View>
       </View>

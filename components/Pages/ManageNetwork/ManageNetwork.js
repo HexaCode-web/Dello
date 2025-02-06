@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import axios from "axios";
 import { useSelector } from "react-redux";
 import TopBar from "../../GeneralComponents/TopBar";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { COLORS, FONTS } from "../../../theme";
 const StatusSection = ({ title, data, onAccept, onReject, userProfiles }) => {
   const navigation = useNavigation();
   if (data.length === 0) {
@@ -76,17 +77,23 @@ const StatusSection = ({ title, data, onAccept, onReject, userProfiles }) => {
   );
 };
 const ManageNetwork = ({ route }) => {
+  const navigation = useNavigation();
   const { network, admin } = route.params;
   const [TempNetwork, setTempNetwork] = useState(network);
   const [loading, setLoading] = useState(false);
-  const [location, setLocation] = useState(false);
+  const [location, setLocation] = useState(null);
   const [userProfiles, setUserProfiles] = useState({});
-
+  const User = useSelector((state) => state.auth.user);
+  const tabsAr = [
+    { Name: "Security", Page: "Security" },
+    { Name: "Profile", Page: "Profile" },
+    { Name: "Settings", Page: "Profiles" },
+    { Name: "Organisation", Page: "Organizations" },
+  ];
   const fetchAddress = async () => {
     setLoading(true);
-    setLocation(null);
-    let latitude = TempNetwork.coordinates.coordinates[1];
-    let longitude = TempNetwork.coordinates.coordinates[0];
+    let latitude = network.coordinates.coordinates[1];
+    let longitude = network.coordinates.coordinates[0];
 
     try {
       const response = await fetch(
@@ -149,22 +156,19 @@ const ManageNetwork = ({ route }) => {
       console.error("Error fetching user profiles:", error);
     }
   };
-  const User = useSelector((state) => state.auth.user);
-  useEffect(() => {
-    setTempNetwork(network);
-  }, [network]);
+
   useFocusEffect(
     useCallback(() => {
+      setTempNetwork(network);
       fetchAddress();
+    }, [network])
+  );
+
+  useFocusEffect(
+    useCallback(() => {
       fetchUserProfiles();
     }, [TempNetwork])
   );
-  const tabsAr = [
-    { Name: "Security", Page: "Security" },
-    { Name: "Profile", Page: "Profile" },
-    { Name: "Profiles", Page: "Profiles" },
-    { Name: "Organisation", Page: "Organizations" },
-  ];
 
   const formatDate = (dateString) => {
     return format(new Date(dateString), "MMM dd, yyyy h:mm a");
@@ -229,6 +233,51 @@ const ManageNetwork = ({ route }) => {
     }
   };
 
+  const DeleteNetwork = () => {
+    Alert.alert(
+      "Delete Network",
+      "Are you sure you want to delete this network? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setLoading(true);
+              const config = {
+                method: "patch",
+                url: `${process.env.EXPO_PUBLIC_NETWORK_API}/deleteNetwork/${network._id}`,
+                headers: {
+                  "Accept-Language": "en",
+                  "Content-Type": "application/json",
+                  authorization: `Bearer ${User.Token}`,
+                },
+              };
+              const response = await axios(config);
+
+              if (response.status === 200) {
+                Alert.alert("success", "Network deleted successfully ");
+                navigation.navigate("Organizations");
+              }
+            } catch (error) {
+              if (error.response) {
+                // Extract error message from the response
+                const errorMessage =
+                  error.response.data.message || "An error occurred";
+                Alert.alert("Error", errorMessage);
+              } else {
+                // Handle the case where no response is returned (e.g., network error)
+                Alert.alert("Error", error.message || "Network error");
+              }
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
   return (
     <ScrollView style={styles.container}>
       <TopBar
@@ -281,6 +330,25 @@ const ManageNetwork = ({ route }) => {
           userProfiles={userProfiles}
         />
       </View>
+
+      <TouchableOpacity
+        style={styles.DefaultButton}
+        onPress={() => {
+          navigation.navigate("EditNetwork", { network: TempNetwork });
+        }}
+      >
+        <Text style={styles.buttonText}>Settings</Text>
+      </TouchableOpacity>
+      {!TempNetwork.Deleted && (
+        <TouchableOpacity
+          style={[styles.DefaultButton, { backgroundColor: "#dc3545" }]}
+          onPress={() => {
+            DeleteNetwork();
+          }}
+        >
+          <Text style={styles.buttonText}>Delete Network</Text>
+        </TouchableOpacity>
+      )}
     </ScrollView>
   );
 };
@@ -288,7 +356,9 @@ const ManageNetwork = ({ route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 20,
+
+    paddingHorizontal: 20,
+    paddingTop: 0,
     paddingBottom: 20,
     color: "black",
     backgroundColor: "#F5FCFF",
@@ -310,8 +380,10 @@ const styles = StyleSheet.create({
   detailsCard: {
     margin: 15,
     padding: 15,
+
     backgroundColor: "#fff",
     borderRadius: 10,
+
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -366,6 +438,27 @@ const styles = StyleSheet.create({
   emptyText: {
     color: "#666",
     fontStyle: "italic",
+  },
+  DefaultButton: {
+    borderRadius: 30,
+    height: 60,
+    justifyContent: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+    paddingHorizontal: 10,
+    backgroundColor: COLORS.secondary,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.8,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+
+  buttonText: {
+    fontSize: FONTS.medium,
+    fontFamily: FONTS.familyBold,
+    color: "white",
   },
 });
 

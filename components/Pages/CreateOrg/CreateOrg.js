@@ -1,7 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import AntDesign from "@expo/vector-icons/AntDesign";
 import { useGetLocation } from "../../hooks/getLocation";
 import { COLORS, FONTS } from "../../../theme";
 import Screen0 from "./Screens/Screen0";
@@ -10,12 +9,13 @@ import Screen2 from "./Screens/Screen2";
 import Screen3 from "./Screens/Screen3";
 import Screen4 from "./Screens/Screen4";
 import { useNavigation } from "@react-navigation/native";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import TopBar from "../../GeneralComponents/TopBar";
+import { updateUserData } from "../../redux/slices/authSlice";
 export default function CreateOrg() {
   const User = useSelector((state) => state.auth.user);
   const navigation = useNavigation();
-
+  const dispatch = useDispatch();
   const [activeInnerPage, setActiveInnerPage] = useState(0);
   const [location, error] = useGetLocation();
   const [orgInfo, setOrgInfo] = useState({
@@ -27,7 +27,6 @@ export default function CreateOrg() {
     address: "",
     officeName: "",
   });
-  console.log(orgInfo);
 
   const [errorInForm, setErrorInForm] = useState("");
   const onChangeEmail = (value) => {
@@ -152,6 +151,8 @@ export default function CreateOrg() {
       const response = await axios(config);
 
       if (response.status === 201) {
+        dispatch(updateUserData(response.data.user));
+
         return true;
       } else {
         setErrorInForm(
@@ -170,6 +171,7 @@ export default function CreateOrg() {
       const SignedUp = await signUp();
       if (SignedUp) {
         setActiveInnerPage(4);
+
         setErrorInForm("");
       }
     }
@@ -241,10 +243,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F5FCFF",
-
-    alignItems: "center",
-    paddingTop: 20,
+    paddingTop: 0,
     paddingBottom: 20,
+    paddingHorizontal: 20,
+
     color: "black",
   },
   Error: {

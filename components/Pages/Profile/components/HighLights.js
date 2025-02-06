@@ -3,7 +3,7 @@ import { FONTS, COLORS } from "../../../../theme";
 import { FlatList } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 
-export default function HighLights({ data }) {
+export default function HighLights({ data, clickAble = true }) {
   const navigation = useNavigation();
   function getTimeSince(startDate) {
     // Get the current date
@@ -73,7 +73,7 @@ export default function HighLights({ data }) {
     </View>
   );
 
-  return (
+  return clickAble ? (
     <TouchableOpacity
       style={styles.container}
       onPress={() => {
@@ -101,6 +101,34 @@ export default function HighLights({ data }) {
         <Text style={styles.placeHolder}>High Lights</Text>
       )}
     </TouchableOpacity>
+  ) : (
+    <View
+      style={styles.container}
+      onPress={() => {
+        navigation.navigate("Settings", { screen: "Highlights" });
+      }}
+    >
+      {data && data.length > 0 ? (
+        <>
+          <View style={styles.imageWrapper}>
+            <Image
+              source={require("../../../../assets/Hightlights.png")}
+              style={styles.image}
+            />
+          </View>
+
+          <FlatList
+            data={data}
+            keyExtractor={(item) => item._id}
+            renderItem={renderItem}
+            style={styles.list}
+            ItemSeparatorComponent={() => <View style={{ height: 6 }} />}
+          />
+        </>
+      ) : (
+        <Text style={styles.placeHolder}>High Lights</Text>
+      )}
+    </View>
   );
 }
 const styles = StyleSheet.create({
@@ -140,5 +168,8 @@ const styles = StyleSheet.create({
     marginLeft: 20,
     color: COLORS.textSecondary,
     fontFamily: FONTS.familyBold,
+    flexWrap: "wrap", // Allow text to wrap
+    flexShrink: 1, // Allow the text to shrink if necessary
+    width: "50%", // Ensure the text container takes up the available width
   },
 });

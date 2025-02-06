@@ -208,7 +208,7 @@ export default function Signup({ navigation }) {
           headerLeft: () => (
             <TouchableOpacity
               style={styles.return}
-              onPress={() => navigation.goBack()} // Dynamically go back
+              onPress={() => navigation.navigate("Greeting")}
             >
               <AntDesign name="arrowleft" size={34} color="black" />
             </TouchableOpacity>
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F5FCFF",
-
+    paddingTop: 30,
     alignItems: "center",
     paddingHorizontal: 10,
     color: "black",
@@ -346,7 +346,6 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.familyBold,
   },
   return: {
-    paddingTop: 50,
     height: 100,
     shadowColor: "white",
     backgroundColor: "#F5FCFF",

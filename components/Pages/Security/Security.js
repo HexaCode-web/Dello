@@ -10,8 +10,10 @@ import react, { useCallback, useEffect, useState } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import ChangePassword from "./components/ChangePassword";
+import ChangeEmail from "./components/ChangeEmail";
 import SettingSection from "../../GeneralComponents/SettingSection";
 import TopBar from "../../GeneralComponents/TopBar";
+import AddAssociatedEmail from "./components/AddAssociatedEmail";
 
 const settingsStack = createStackNavigator();
 export default function Security() {
@@ -20,29 +22,28 @@ export default function Security() {
   return (
     <settingsStack.Navigator
       screenOptions={{
-        headerShown: false,
+        headerShown: true,
         headerStyle: styles.return,
+        header: () => (
+          <TopBar
+            returnTarget={{ name: "Security", params: { screen: "Main" } }}
+            hasReturnButton={true}
+          />
+        ),
         cardStyle: styles.container,
       }}
       initialRouteName="Main"
       detachInactiveScreens={true}
     >
       <settingsStack.Screen name="Main" component={Main} />
-      <settingsStack.Screen
-        name="Change Password"
-        options={({ navigation, route }) => ({
-          headerShown: true,
-          title: "",
-          headerLeft: () => (
-            <TopBar
-              Title={route.name}
-              returnTarget={{ name: "Security", params: { screen: "Main" } }}
-              hasReturnButton={true}
-            />
-          ), // Dynamic title based on screen name
-        })}
-      >
+      <settingsStack.Screen name="Change Password">
         {(props) => <ChangePassword {...props} navigation={navigation} />}
+      </settingsStack.Screen>
+      <settingsStack.Screen name="Change Email">
+        {(props) => <ChangeEmail {...props} navigation={navigation} />}
+      </settingsStack.Screen>
+      <settingsStack.Screen name="Add Work Email">
+        {(props) => <AddAssociatedEmail {...props} navigation={navigation} />}
       </settingsStack.Screen>
     </settingsStack.Navigator>
   );
@@ -65,13 +66,7 @@ const Main = () => {
   };
 
   return (
-    <ScrollView style={styles.settingsContainer}>
-      <TopBar
-        Title="Security"
-        returnTarget={{ name: "Home" }}
-        hasReturnButton={true}
-      />
-
+    <View style={styles.settingsContainer}>
       <SettingSection
         title="Change Password"
         onPress={() => navigation.navigate("Change Password")}
@@ -79,6 +74,10 @@ const Main = () => {
       <SettingSection
         title="Change Email"
         onPress={() => navigation.navigate("Change Email")}
+      />
+      <SettingSection
+        title="Add Work Email"
+        onPress={() => navigation.navigate("Add Work Email")}
       />
       <SettingSection
         title="Set up MFA"
@@ -93,7 +92,7 @@ const Main = () => {
         </Text>
         <Text style={styles.arrow}>›</Text>
       </TouchableOpacity>
-    </ScrollView>
+    </View>
   );
 };
 const styles = StyleSheet.create({
@@ -101,16 +100,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F5FCFF",
 
-    paddingTop: 20,
-  },
-  settingsContainer: {
-    flex: 1,
-    backgroundColor: "#F5FCFF",
-
+    paddingTop: 0,
     paddingBottom: 20,
+    paddingHorizontal: 20,
+    justifyContent: "space-between",
     color: "black",
-    backgroundColor: "#F5FCFF",
   },
+
   return: {
     shadowColor: "white",
   },

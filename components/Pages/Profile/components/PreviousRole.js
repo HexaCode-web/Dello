@@ -3,7 +3,7 @@ import { FONTS, COLORS } from "../../../../theme";
 import { FlatList } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 
-export default function PreviousRole({ data }) {
+export default function PreviousRole({ data, clickAble = true }) {
   const navigation = useNavigation();
   function getTimeSince(startDate) {
     // Get the current date
@@ -89,7 +89,7 @@ export default function PreviousRole({ data }) {
       </View>
     );
   };
-  return (
+  return clickAble ? (
     <TouchableOpacity
       style={styles.container}
       onPress={() => {
@@ -115,6 +115,32 @@ export default function PreviousRole({ data }) {
         <Text style={styles.placeHolder}>Previous Roles</Text>
       )}
     </TouchableOpacity>
+  ) : (
+    <View
+      style={styles.container}
+      onPress={() => {
+        navigation.navigate("Settings", { screen: "Previous Roles" });
+      }}
+    >
+      {data && data.length > 0 ? (
+        <>
+          <Image
+            source={require("../../../../assets/PreviousRole.png")}
+            style={styles.image}
+          />
+
+          <FlatList
+            data={data}
+            keyExtractor={(item) => item._id}
+            renderItem={renderItem}
+            style={styles.list}
+            ItemSeparatorComponent={() => <View style={{ height: 6 }} />}
+          />
+        </>
+      ) : (
+        <Text style={styles.placeHolder}>Previous Roles</Text>
+      )}
+    </View>
   );
 }
 const styles = StyleSheet.create({
@@ -155,5 +181,8 @@ const styles = StyleSheet.create({
     marginLeft: 20,
     color: COLORS.textSecondary,
     fontFamily: FONTS.familyBold,
+    flexWrap: "wrap", // Allow text to wrap
+    flexShrink: 1, // Allow the text to shrink if necessary
+    width: "78%", // Ensure the text container takes up the available width
   },
 });

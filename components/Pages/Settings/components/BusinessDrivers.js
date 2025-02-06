@@ -211,12 +211,6 @@ const BusinessDrivers = ({ navigation }) => {
           >
             <Text style={styles.buttonText}>Next</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            onPress={savePresentRoleDetails}
-            style={styles.DefaultButton}
-          >
-            <Text style={styles.buttonText}>Add</Text>
-          </TouchableOpacity>
         </View>
       </View>
 

@@ -56,12 +56,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     gap: 50,
-    paddingHorizontal: 16,
     marginBottom: 10,
     marginTop: 30,
     borderRadius: 10,
-    padding: 10,
-    width: "80%",
+    width: "100%",
     alignSelf: "center",
   },
 });

@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { COLORS, FONTS } from "../../../../theme";
 import { useNavigation } from "@react-navigation/native";
 
-export default function presentRole({ data }) {
+export default function presentRole({ data, clickAble = true }) {
   const navigation = useNavigation();
   function getTimeSince(startDate) {
     // Get the current date
@@ -47,7 +47,7 @@ export default function presentRole({ data }) {
     return result.trim();
   }
 
-  return (
+  return clickAble ? (
     <TouchableOpacity
       style={styles.container}
       onPress={() => {
@@ -69,6 +69,28 @@ export default function presentRole({ data }) {
         <Text style={styles.placeholder}>Present Role</Text>
       )}
     </TouchableOpacity>
+  ) : (
+    <View
+      style={styles.container}
+      onPress={() => {
+        navigation.navigate("Settings", { screen: "Present Role" });
+      }}
+    >
+      {data.Company ? (
+        <>
+          <View>
+            <Text style={styles.mainText}>{data?.Position}</Text>
+            <Text style={styles.mainText}>{data?.Company} </Text>
+          </View>
+          <View>
+            <Text style={styles.subText}>Present</Text>
+            <Text>{getTimeSince(data?.StartDate)}</Text>
+          </View>
+        </>
+      ) : (
+        <Text style={styles.placeholder}>Present Role</Text>
+      )}
+    </View>
   );
 }
 const styles = StyleSheet.create({

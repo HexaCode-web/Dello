@@ -2,14 +2,13 @@
   "expo": {
     "name": "Delllo",
     "slug": "Dello",
-    "version": "1.0.0",
+    "version": "1.7.9",
+    "newArchEnabled": true,
     "androidNavigationBar": {
       "visible": "sticky-immersive",
-      "backgroundColor": "#000000"
+      "backgroundColor": "#ffff"
     },
-    "permissions": [
-      "ACCESS_FINE_LOCATION"
-    ],
+    "permissions": ["ACCESS_FINE_LOCATION"],
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -19,9 +18,11 @@
       "backgroundColor": "#4B164C"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.marcokhairy.Delllo"
     },
     "android": {
+      "versionCode": 10709,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#4B164C"

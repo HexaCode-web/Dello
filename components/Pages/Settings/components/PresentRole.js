@@ -125,12 +125,7 @@ const PresentRole = ({ data }) => {
         >
           <Text style={styles.buttonText}>Next</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          onPress={savePresentRoleDetails}
-          style={styles.DefaultButton}
-        >
-          <Text style={styles.buttonText}>Save</Text>
-        </TouchableOpacity>
+
         {error && <Text style={styles.Error}>{error}</Text>}
       </View>
     </ScrollView>

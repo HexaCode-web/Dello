@@ -9,7 +9,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { useGetLocation } from "../../../hooks/getLocation";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { login } from "../../../redux/slices/authSlice";
 import { COLORS, FONTS } from "../../../../theme";
 import { useNavigation } from "@react-navigation/native";
@@ -31,7 +31,7 @@ async function getFromSecureStore(key) {
 export default function SignIn() {
   const navigation = useNavigation();
   const dispatch = useDispatch();
-  const [location, error] = useGetLocation();
+  const { location, error, loading } = useSelector((state) => state.location);
 
   const [userInfo, setUserInfo] = useState({
     Email: "",
@@ -92,8 +92,8 @@ export default function SignIn() {
         {
           email,
           password,
-          latitude: 0,
-          longitude: 0,
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
         },
         {
           headers: {
@@ -150,6 +150,7 @@ export default function SignIn() {
             setErrorInForm={setErrorInForm}
             savedCredentials={savedCredentials}
             handleQuickLogin={handleQuickLogin}
+            loading={loading}
           />
         )}
       </LoginStack.Screen>
@@ -181,6 +182,7 @@ const EmailScreen = ({
   setErrorInForm,
   savedCredentials,
   handleQuickLogin,
+  loading,
 }) => {
   const handleContinue = () => {
     if (!userInfo.Email) {
@@ -220,7 +222,7 @@ const EmailScreen = ({
         />
       </View>
 
-      {savedCredentials && (
+      {savedCredentials && !loading && (
         <TouchableOpacity
           onPress={handleQuickLogin}
           style={styles.DefaultButton}
@@ -316,7 +318,7 @@ const styles = StyleSheet.create({
   screenContainer: {
     flex: 1,
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 0,
   },
   rememberMeWrapper: {
     display: "flex",

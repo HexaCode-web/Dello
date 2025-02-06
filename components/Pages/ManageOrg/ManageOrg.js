@@ -15,11 +15,11 @@ export default function ManageOrg() {
 
   const User = useSelector((state) => state.auth.user);
   const associatedEmails = User.user.associatedEmails;
+
   const [activePage, setActivePage] = useState(0);
 
   const [activeOrg, setActiveOrg] = useState(null);
   const [orgData, setOrgData] = useState(null);
-  console.log(orgData);
 
   const getActiveOrg = async (orgId) => {
     try {
@@ -45,12 +45,17 @@ export default function ManageOrg() {
   useFocusEffect(
     useCallback(() => {
       const fetchAllOrgs = async () => {
-        if (associatedEmails && associatedEmails.length > 0) {
+        const filteredEmails = associatedEmails.filter(
+          (email) => email.OrgId !== ""
+        );
+
+        if (filteredEmails.length > 0) {
           try {
             // Fetch data for each organization independently
             const orgs = await Promise.all(
-              associatedEmails.map((email) => getActiveOrg(email.OrgId))
+              filteredEmails.map((email) => getActiveOrg(email.OrgId))
             );
+
             setOrgData(orgs); // Set the fetched data to state
           } catch (error) {
             console.error("Error fetching organizations:", error);
@@ -135,15 +140,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F5FCFF",
-    alignItems: "center",
     flexDirection: "column",
-    paddingTop: 20,
+    paddingTop: 0,
+    paddingHorizontal: 20,
+
     paddingBottom: 20,
     color: "black",
   },
   header: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
     padding: 16,
     width: "90%",
@@ -152,10 +157,9 @@ const styles = StyleSheet.create({
     borderBottomColor: "#e0e0e0",
   },
   boxWrapper: {
-    width: "90%",
+    width: "100%",
     padding: 10,
     backgroundColor: "#F5FCFF",
-
     gap: 20,
     margin: "auto",
     marginVertical: 30,
@@ -206,7 +210,6 @@ const styles = StyleSheet.create({
     display: "flex",
     justifyContent: "center",
     flexDirection: "row",
-    alignItems: "center",
     marginBottom: 10,
     paddingHorizontal: 10,
     backgroundColor: COLORS.secondary,

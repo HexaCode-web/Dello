@@ -1,7 +1,8 @@
-import { Text, StyleSheet, TouchableOpacity } from "react-native";
+import { Text, StyleSheet, TouchableOpacity, View } from "react-native";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigation } from "@react-navigation/native";
+import { FONTS } from "../../../../theme";
 
 const NetworkItem = ({ item, setActivePage }) => {
   const navigation = useNavigation();
@@ -25,6 +26,46 @@ const NetworkItem = ({ item, setActivePage }) => {
     }
   }, [item.adminId]);
 
+  // Determine the status of the network
+  const getNetworkStatus = () => {
+    const endDate = new Date(item.endDate);
+    const currentDate = new Date();
+    if (item.Deleted) {
+      return "Deleted"; // Network is deleted
+    } else if (item.Accepted.length >= item.size) {
+      return "Full"; // Network is full
+    } else if (
+      endDate.getFullYear() < currentDate.getFullYear() ||
+      (endDate.getFullYear() === currentDate.getFullYear() &&
+        endDate.getMonth() < currentDate.getMonth()) ||
+      (endDate.getFullYear() === currentDate.getFullYear() &&
+        endDate.getMonth() === currentDate.getMonth() &&
+        endDate.getDate() < currentDate.getDate())
+    ) {
+      return "Expired"; // Network is expired
+    } else {
+      return "Active"; // Network is active
+    }
+  };
+
+  // Get the color for the status indicator
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "Active":
+        return "green";
+      case "Expired":
+      case "Deleted":
+        return "red";
+      case "Full":
+        return "orange";
+      default:
+        return "gray";
+    }
+  };
+
+  const status = getNetworkStatus();
+  const statusColor = getStatusColor(status);
+
   return (
     <TouchableOpacity
       style={styles.card}
@@ -32,14 +73,24 @@ const NetworkItem = ({ item, setActivePage }) => {
         navigation.navigate("NetworkDetails", { network: item, admin: admin });
       }}
     >
+      {/* Status Indicator */}
+      <View style={[styles.statusIndicator, { backgroundColor: statusColor }]}>
+        <Text style={styles.statusText}>{status}</Text>
+      </View>
+
       <Text style={styles.title}>{item.name}</Text>
       {admin ? (
-        <Text style={styles.info}>Admin Email: {admin.email}</Text>
+        <Text style={styles.info}>
+          Admin Email:
+          {
+            admin.associatedEmails.find((email) => email.OrgId === item.orgId)
+              .email
+          }
+        </Text>
       ) : (
         <Text style={styles.info}>Loading Admin...</Text>
       )}
       <Text style={styles.info}>Size: {item.size}</Text>
-      {/* <Text style={styles.info}>Type: {item.Type}</Text> */}
       <Text style={styles.info}>Pending Requests: {item.Pending.length}</Text>
       <Text style={styles.info}>Members: {item.Accepted.length}</Text>
       <Text style={styles.info}>Rejected: {item.Rejected.length}</Text>
@@ -60,6 +111,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
     elevation: 3,
+    position: "relative", // Needed for absolute positioning of the status indicator
   },
   title: {
     fontSize: 18,
@@ -70,6 +122,18 @@ const styles = StyleSheet.create({
   info: {
     fontSize: 14,
     color: "#555",
+  },
+  statusIndicator: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    borderRadius: 5, // Makes it a circle
+    padding: 5,
+  },
+  statusText: {
+    color: "white",
+    fontSize: FONTS.small,
+    fontWeight: "bold",
   },
 });
 

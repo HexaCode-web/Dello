@@ -10,7 +10,7 @@ import {
 import { COLORS, FONTS } from "../../../../theme";
 import { useNavigation } from "@react-navigation/native";
 
-export default function BusinessDriver({ data }) {
+export default function BusinessDriver({ data, clickAble = true }) {
   const navigation = useNavigation();
   const renderItem = ({ item }) => (
     <View style={styles.itemContainer}>
@@ -29,7 +29,7 @@ export default function BusinessDriver({ data }) {
     </View>
   );
 
-  return (
+  return clickAble ? (
     <TouchableOpacity
       style={styles.container}
       onPress={() => {
@@ -57,6 +57,34 @@ export default function BusinessDriver({ data }) {
         <Text style={styles.placeHolder}>Business Drivers</Text>
       )}
     </TouchableOpacity>
+  ) : (
+    <View
+      style={styles.container}
+      onPress={() => {
+        navigation.navigate("Settings", { screen: "Business Drivers" });
+      }}
+    >
+      {data && data.length > 0 ? (
+        <>
+          <View style={styles.imageWrapper}>
+            <Image
+              source={require("../../../../assets/bussinessDrive.png")}
+              style={styles.image}
+            />
+          </View>
+
+          <FlatList
+            data={data}
+            keyExtractor={(item) => item._id}
+            renderItem={renderItem}
+            style={styles.list}
+            ItemSeparatorComponent={() => <View style={{ height: 6 }} />}
+          />
+        </>
+      ) : (
+        <Text style={styles.placeHolder}>Business Drivers</Text>
+      )}
+    </View>
   );
 }
 
@@ -99,5 +127,8 @@ const styles = StyleSheet.create({
     marginLeft: 20,
     color: COLORS.textSecondary,
     fontFamily: FONTS.familyBold,
+    flexWrap: "wrap", // Allow text to wrap
+    flexShrink: 1, // Allow the text to shrink if necessary
+    width: "50%", // Ensure the text container takes up the available width
   },
 });

@@ -95,12 +95,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingTop: 120,
     paddingBottom: 20,
-    paddingHorizontal: 10,
   },
   screenContainer: {
     flex: 1,
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 0,
   },
   Error: {
     color: "red",

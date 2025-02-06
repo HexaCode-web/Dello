@@ -72,13 +72,15 @@ const styles = StyleSheet.create({
   inputWrapper: {
     display: "flex",
     flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
   },
   inputsWrapper: {
     flex: 1,
   },
   input: {
     height: 50,
-    width: 350,
+    width: "95%",
     margin: 12,
     borderWidth: 1,
     padding: 10,

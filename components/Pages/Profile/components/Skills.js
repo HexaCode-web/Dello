@@ -9,7 +9,7 @@ import {
 import { FONTS, COLORS } from "../../../../theme";
 import { useNavigation } from "@react-navigation/native";
 
-export default function Skills({ data }) {
+export default function Skills({ data, clickAble = true }) {
   const navigation = useNavigation();
   const renderItem = ({ item }) => (
     <View>
@@ -32,7 +32,7 @@ export default function Skills({ data }) {
       </Text>
     </View>
   );
-  return (
+  return clickAble ? (
     <TouchableOpacity
       style={styles.container}
       onPress={() => {
@@ -58,6 +58,32 @@ export default function Skills({ data }) {
         <Text style={styles.placeHolder}>Skills</Text>
       )}
     </TouchableOpacity>
+  ) : (
+    <View
+      style={styles.container}
+      onPress={() => {
+        navigation.navigate("Settings", { screen: "Skills" });
+      }}
+    >
+      {data && data.length > 0 ? (
+        <>
+          <Image
+            source={require("../../../../assets/Skills.png")}
+            style={styles.image}
+          />
+
+          <FlatList
+            data={data}
+            keyExtractor={(item) => item._id}
+            renderItem={renderItem}
+            style={styles.list}
+            ItemSeparatorComponent={() => <View style={{ height: 6 }} />}
+          />
+        </>
+      ) : (
+        <Text style={styles.placeHolder}>Skills</Text>
+      )}
+    </View>
   );
 }
 const styles = StyleSheet.create({
@@ -98,5 +124,8 @@ const styles = StyleSheet.create({
     marginLeft: 20,
     color: COLORS.textSecondary,
     fontFamily: FONTS.familyBold,
+    flexWrap: "wrap", // Allow text to wrap
+    flexShrink: 1, // Allow the text to shrink if necessary
+    width: "21%", // Ensure the text container takes up the available width
   },
 });

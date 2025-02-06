@@ -1,11 +1,4 @@
-import {
-  View,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  Alert,
-  ScrollView,
-} from "react-native";
+import { View, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import SettingSection from "../../GeneralComponents/SettingSection";
@@ -19,28 +12,21 @@ export default function Profiles() {
   return (
     <settingsStack.Navigator
       screenOptions={{
-        headerShown: false,
+        headerShown: true,
         headerStyle: styles.return,
         cardStyle: styles.container,
+        header: () => (
+          <TopBar
+            returnTarget={{ name: "Profiles", params: { screen: "Main" } }}
+            hasReturnButton={true}
+          />
+        ),
       }}
       initialRouteName="Main"
       detachInactiveScreens={true}
     >
       <settingsStack.Screen name="Main" component={Main} />
-      <settingsStack.Screen
-        name="Change Username"
-        options={({ navigation, route }) => ({
-          headerShown: true,
-          title: "",
-          headerLeft: () => (
-            <TopBar
-              Title={route.name}
-              returnTarget={{ name: "Profiles", params: { screen: "Main" } }}
-              hasReturnButton={true}
-            />
-          ), // Dynamic title based on screen name
-        })}
-      >
+      <settingsStack.Screen name="Change Username">
         {(props) => <ChangeName {...props} navigation={navigation} />}
       </settingsStack.Screen>
     </settingsStack.Navigator>
@@ -50,14 +36,9 @@ const Main = () => {
   const navigation = useNavigation();
 
   return (
-    <ScrollView style={styles.settingsContainer}>
-      <TopBar
-        Title="Profiles"
-        returnTarget={{ name: "Home" }}
-        hasReturnButton={true}
-      />
+    <View style={styles.settingsContainer}>
       <SettingSection
-        title="Set Default"
+        title="Set Profile : Default"
         onPress={() => navigation.navigate("Change Password")}
       />
       <SettingSection
@@ -65,18 +46,18 @@ const Main = () => {
         onPress={() => navigation.navigate("Change Username")}
       />
       <SettingSection
-        title="Configure"
+        title="Edit"
         onPress={() => navigation.navigate("Settings")}
       />
-    </ScrollView>
+    </View>
   );
 };
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F5FCFF",
-
-    paddingTop: 20,
+    paddingHorizontal: 20,
+    paddingTop: 0,
   },
   settingsContainer: {
     flex: 1,

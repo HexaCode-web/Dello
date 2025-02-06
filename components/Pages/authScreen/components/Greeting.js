@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
 import { COLORS, FONTS } from "../../../../theme";
+import Constants from "expo-constants";
 
 export default function Greeting({ navigation }) {
   return (
@@ -26,17 +27,17 @@ export default function Greeting({ navigation }) {
           <Text style={styles.buttonText}>Login with Email</Text>
         </TouchableOpacity>
       </View>
-      <Text>version 1.7.4</Text>
+      <Text>version {Constants.expoConfig.version}</Text>
     </View>
   );
 }
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5FCFF",
+    backgroundColor: "white",
 
     alignItems: "center",
-    paddingTop: 20,
+    paddingTop: 0,
     paddingBottom: 20,
     justifyContent: "space-between",
     color: "black",

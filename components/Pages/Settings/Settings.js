@@ -51,41 +51,19 @@ export default function Settings() {
   return (
     <settingsStack.Navigator
       screenOptions={{
-        headerShown: false,
+        headerShown: true,
         headerStyle: styles.return,
+        header: () => (
+          <TopBar returnTarget={{ name: "Profile" }} hasReturnButton={true} />
+        ),
         cardStyle: styles.container,
       }}
       initialRouteName="Main"
       detachInactiveScreens={true}
     >
-      {/* Main Settings Screen */}
       <settingsStack.Screen name="Main" component={Main} />
 
-      {/* <settingsStack.Screen
-        name="Change Email"
-        options={({ navigation, route }) => ({
-          headerShown: true,
-          title: "",
-          headerLeft: () => <TopBar title={route.name} />, // Dynamic title based on screen name
-        })}
-      >
-        {(props) => <ChangeEmail {...props} navigation={navigation} />}
-      </settingsStack.Screen> */}
-      {/* Present Role Screen */}
-      <settingsStack.Screen
-        name="Present Role"
-        options={({ navigation, route }) => ({
-          headerShown: true,
-          title: "",
-          headerLeft: () => (
-            <TopBar
-              Title={route.name}
-              returnTarget={{ name: "Profile" }}
-              hasReturnButton={true}
-            />
-          ),
-        })}
-      >
+      <settingsStack.Screen name="Present Role">
         {(props) => (
           <PresentRole
             {...props}
@@ -95,111 +73,31 @@ export default function Settings() {
         )}
       </settingsStack.Screen>
 
-      {/* Business Drivers Screen */}
-      <settingsStack.Screen
-        name="Business Drivers"
-        options={({ navigation, route }) => ({
-          headerShown: true,
-          title: "",
-          headerLeft: () => (
-            <TopBar
-              Title={route.name}
-              returnTarget={{ name: "Profile" }}
-              hasReturnButton={true}
-            />
-          ), // Dynamic title
-        })}
-      >
+      <settingsStack.Screen name="Business Drivers">
         {(props) => <BusinessDrivers {...props} navigation={navigation} />}
       </settingsStack.Screen>
 
-      {/* Highlights Screen */}
-      <settingsStack.Screen
-        name="Highlights"
-        options={({ navigation, route }) => ({
-          headerShown: true,
-          title: "",
-          headerLeft: () => (
-            <TopBar
-              Title={route.name}
-              returnTarget={{ name: "Profile" }}
-              hasReturnButton={true}
-            />
-          ), // Dynamic title
-        })}
-      >
+      <settingsStack.Screen name="Highlights">
         {(props) => <HighLights {...props} navigation={navigation} />}
       </settingsStack.Screen>
 
       {/* Skills Screen */}
-      <settingsStack.Screen
-        name="Skills"
-        options={({ navigation, route }) => ({
-          headerShown: true,
-          title: "",
-          headerLeft: () => (
-            <TopBar
-              Title={route.name}
-              returnTarget={{ name: "Profile" }}
-              hasReturnButton={true}
-            />
-          ), // Dynamic title
-        })}
-      >
+      <settingsStack.Screen name="Skills">
         {(props) => <Skills {...props} navigation={navigation} />}
       </settingsStack.Screen>
 
       {/* Previous Roles Screen */}
-      <settingsStack.Screen
-        name="Previous Roles"
-        options={({ navigation, route }) => ({
-          headerShown: true,
-          title: "",
-          headerLeft: () => (
-            <TopBar
-              Title={route.name}
-              returnTarget={{ name: "Profile" }}
-              hasReturnButton={true}
-            />
-          ), // Dynamic title
-        })}
-      >
+      <settingsStack.Screen name="Previous Roles">
         {(props) => <PreviousRoles {...props} navigation={navigation} />}
       </settingsStack.Screen>
 
       {/* Education Screen */}
-      <settingsStack.Screen
-        name="Education"
-        options={({ navigation, route }) => ({
-          headerShown: true,
-          title: "",
-          headerLeft: () => (
-            <TopBar
-              Title={route.name}
-              returnTarget={{ name: "Profile" }}
-              hasReturnButton={true}
-            />
-          ), // Dynamic title
-        })}
-      >
+      <settingsStack.Screen name="Education">
         {(props) => <Education {...props} navigation={navigation} />}
       </settingsStack.Screen>
 
       {/* Immediate Needs Screen */}
-      <settingsStack.Screen
-        name="Immediate Need"
-        options={({ navigation, route }) => ({
-          headerShown: true,
-          title: "",
-          headerLeft: () => (
-            <TopBar
-              Title={route.name}
-              returnTarget={{ name: "Profile" }}
-              hasReturnButton={true}
-            />
-          ), // Dynamic title
-        })}
-      >
+      <settingsStack.Screen name="Immediate Need">
         {(props) => <ImmediateNeeds {...props} navigation={navigation} />}
       </settingsStack.Screen>
     </settingsStack.Navigator>
@@ -234,30 +132,22 @@ const Main = () => {
   };
 
   return (
-    <ScrollView style={styles.settingsContainer}>
-      <TopBar
-        Title="Settings"
-        returnTarget={{ name: "Profiles" }}
-        hasReturnButton={true}
-      />
-
-      {renderTabs(Tabs)}
-    </ScrollView>
+    <ScrollView style={styles.settingsContainer}>{renderTabs(Tabs)}</ScrollView>
   );
 };
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F5FCFF",
+    paddingHorizontal: 18,
 
-    paddingTop: 20,
+    paddingTop: 0,
   },
   settingsContainer: {
-    width: "100%", // Ensure full width of the parent container
+    width: "100%",
     display: "flex",
 
     backgroundColor: "#F5FCFF",
-    // Ensure consistent background
   },
   return: {
     shadowColor: "white",

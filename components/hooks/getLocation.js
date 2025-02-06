@@ -12,7 +12,7 @@ export const useGetLocation = () => {
         setError("Permission to access location was denied");
         return;
       }
-      let location = await Location.getLastKnownPositionAsync({});
+      let location = await Location.getCurrentPositionAsync({});
       setLocation(location);
     } catch (err) {
       setError(err.message);

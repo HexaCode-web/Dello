@@ -312,12 +312,6 @@ const HighLights = ({ navigation }) => {
           >
             <Text style={styles.buttonText}>Next</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            onPress={saveHighLightDetails}
-            style={styles.DefaultButton}
-          >
-            <Text style={styles.buttonText}>Save</Text>
-          </TouchableOpacity>
         </View>
       </View>
       <Modal

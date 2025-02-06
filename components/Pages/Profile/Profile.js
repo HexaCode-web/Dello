@@ -13,12 +13,13 @@ import Education from "./components/Education";
 import PreviousRole from "./components/PreviousRole";
 import Skills from "./components/Skills";
 import ImmediateNeeds from "./components/ImmediateNeeds";
+import Contact from "./components/Contact";
 export default function Profile() {
   const User = useSelector((state) => state.auth.user);
   const tabsAr = [
     { Name: "Security", Page: "Security" },
     { Name: "Profile", Page: "Profile" },
-    { Name: "Profiles", Page: "Profiles" },
+    { Name: "Settings", Page: "Profiles" },
     { Name: "Organisation", Page: "Organizations" },
   ];
 
@@ -61,7 +62,8 @@ export default function Profile() {
         return <PreviousRole data={item.data} />;
       case "Skills":
         return <Skills data={item.data} />;
-
+      // case "Contact":
+      //   return <Contact data={item.data} />;
       default:
         return null;
     }
@@ -69,6 +71,7 @@ export default function Profile() {
 
   const listData = [
     { type: "PresentRole", data: data?.presentRole },
+    { type: "Contact", data: { email: User.user.email } },
     { type: "ImmediateNeeds", data: data?.ImmediateNeeds },
     { type: "BusinessDriver", data: data?.businessDriver },
     { type: "HighLights", data: data?.highLight },
@@ -97,7 +100,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F5FCFF",
-    paddingTop: 20,
+    paddingTop: 0,
+    paddingHorizontal: 20,
     justifyContent: "flex-start",
   },
 });

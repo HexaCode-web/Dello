@@ -18,7 +18,7 @@ const ChatBot = () => {
   const tabsAr = [
     { Name: "Security", Page: "Security" },
     { Name: "Profile", Page: "Profile" },
-    { Name: "Profiles", Page: "Profiles" },
+    { Name: "Settings", Page: "Profiles" },
     { Name: "Organisation", Page: "Organizations" },
   ];
 
@@ -95,10 +95,12 @@ const ChatBot = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     backgroundColor: "#F5FCFF",
-
-    paddingTop: 20,
+    paddingHorizontal: 20,
+    flex: 1,
+    paddingTop: 0,
+    paddingBottom: 20,
+    color: "black",
   },
   header: {
     flexDirection: "row",
@@ -166,6 +168,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   inputWrapper: {
+    width: "100%",
     flexDirection: "row",
     alignItems: "center",
   },

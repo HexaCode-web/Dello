@@ -9,18 +9,18 @@ import { COLORS, FONTS } from "../../../../theme";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
-import { useGetLocation } from "../../../hooks/getLocation";
+import { useSelector } from "react-redux";
 export default function Header() {
-  const [coords, error] = useGetLocation();
+  const { location, error } = useSelector((state) => state.location);
 
-  const [location, setLocation] = useState("");
+  const [address, setAddress] = useState("");
   const [loading, setLoading] = useState(true);
 
   const fetchAddress = async () => {
     setLoading(true);
-    setLocation(null);
-    let latitude = coords.coords.latitude;
-    let longitude = coords.coords.longitude;
+    setAddress(null);
+    let latitude = location.coords.latitude;
+    let longitude = location.coords.longitude;
 
     try {
       const response = await fetch(
@@ -43,16 +43,16 @@ export default function Header() {
 
       const data = await response.json();
       if (data && data.display_name) {
-        const { city, postcode } = data.address;
-        const formattedAddress = `${city}, ${postcode}`;
+        const { city, postcode, road } = data.address;
+        const formattedAddress = `${city}, ${postcode}, ${road}`;
 
-        setLocation(formattedAddress); // Excludes postcode
+        setAddress(formattedAddress); // Excludes postcode
       } else {
-        setLocation("Address not found");
+        setAddress("Address not found");
       }
     } catch (error) {
-      console.error("Error fetching address:", error);
-      setLocation("Error fetching address");
+      console.log("Error fetching address:", error);
+      setAddress("Error fetching address");
     } finally {
       setLoading(false);
     }
@@ -60,10 +60,8 @@ export default function Header() {
 
   useFocusEffect(
     useCallback(() => {
-      if (coords) {
-        fetchAddress();
-      }
-    }, [coords])
+      fetchAddress();
+    }, [location])
   );
 
   return (
@@ -87,7 +85,7 @@ export default function Header() {
         ) : (
           <>
             {/* <EvilIcons name="location" size={30} color={COLORS.primary} /> */}
-            <Text style={styles.address}>{location}</Text>
+            <Text style={styles.address}>{address}</Text>
           </>
         )}
       </View>
@@ -100,7 +98,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F5FCFF",
 
     alignItems: "center",
-    paddingTop: 20,
+    paddingTop: 0,
     justifyContent: "space-between",
     color: "black",
     width: "100%", // Ensures full width on the header
@@ -117,7 +115,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     width: "100%",
-    paddingTop: 20,
+    paddingTop: 0,
     paddingLeft: 15,
   },
   address: {
