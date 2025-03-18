@@ -2,11 +2,10 @@
   "expo": {
     "name": "Delllo",
     "slug": "Dello",
-    "version": "1.7.9",
+    "version": "1.8.7.0",
     "newArchEnabled": true,
     "androidNavigationBar": {
-      "visible": "sticky-immersive",
-      "backgroundColor": "#ffff"
+      "visible": "sticky-immersive"
     },
     "permissions": ["ACCESS_FINE_LOCATION"],
     "orientation": "portrait",
@@ -22,7 +21,6 @@
       "bundleIdentifier": "com.marcokhairy.Delllo"
     },
     "android": {
-      "versionCode": 10709,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#4B164C"
@@ -40,6 +38,7 @@
           "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
         }
       ],
+
       "expo-secure-store"
     ],
     "extra": {

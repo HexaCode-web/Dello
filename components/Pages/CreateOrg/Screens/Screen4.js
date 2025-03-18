@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { COLORS, FONTS } from "../../../../theme";
 export default function Screen4() {
   return (
-    <>
+    <View>
       <Image
         source={require("../../../../assets/Finished.gif")}
         style={styles.gif}
@@ -11,7 +11,7 @@ export default function Screen4() {
         <Text style={styles.Header}></Text>
         <Text style={styles.Header}>Organization created</Text>
       </View>
-    </>
+    </View>
   );
 }
 const styles = StyleSheet.create({

@@ -13,7 +13,7 @@ import { Feather } from "@expo/vector-icons";
 import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
 import { COLORS, FONTS } from "../../../../theme";
-import { updateUserData } from "../../../redux/slices/authSlice";
+import { logout, updateUserData } from "../../../redux/slices/authSlice";
 import { useNavigation } from "@react-navigation/native";
 
 const PresentRole = ({ data }) => {
@@ -68,6 +68,9 @@ const PresentRole = ({ data }) => {
         setSaved(true);
       }
     } catch (error) {
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       console.log(error);
       setError(error.message);
       Alert.alert("Error", error.message);

@@ -15,7 +15,7 @@ import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
 import DropdownInput from "../../../GeneralComponents/DropdownInput.js";
 import { COLORS, FONTS } from "../../../../theme.js";
-import { updateUserData } from "../../../redux/slices/authSlice";
+import { logout, updateUserData } from "../../../redux/slices/authSlice";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 const Skills = ({ navigation }) => {
@@ -75,6 +75,9 @@ const Skills = ({ navigation }) => {
         setSaved(true); // Set saved status to true when API call is successful
       }
     } catch (error) {
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       console.log(error.message);
       setError(error.message);
     }
@@ -100,6 +103,9 @@ const Skills = ({ navigation }) => {
         dispatch(updateUserData(response.data.user));
       }
     } catch (error) {
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       console.log(error);
       Alert.alert("Error", error.message);
     }
@@ -129,6 +135,9 @@ const Skills = ({ navigation }) => {
         dispatch(updateUserData(response.data.user));
       }
     } catch (error) {
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       console.log(error);
       Alert.alert("Error", error.message);
     }

@@ -1,5 +1,5 @@
 import axios from "axios"; // Import axios if not already done
-import { Alert } from "react-native"; // Import for showing alerts
+import { Alert, Switch } from "react-native"; // Import for showing alerts
 import { useState } from "react";
 import { Text, View, StyleSheet, TextInput } from "react-native";
 import { COLORS, FONTS } from "../../../../theme";
@@ -11,7 +11,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { useGetLocation } from "../../../hooks/getLocation";
 
 import DropdownInput from "../../../GeneralComponents/DropdownInput";
-import { updateUserData } from "../../../redux/slices/authSlice";
+import { logout, updateUserData } from "../../../redux/slices/authSlice";
 import { useNavigation } from "@react-navigation/native";
 export default function CreateNetwork({ orgId, setMainActivePage }) {
   const dispatch = useDispatch();
@@ -34,6 +34,7 @@ export default function CreateNetwork({ orgId, setMainActivePage }) {
     latitude: location?.coords.latitude,
     longitude: location?.coords.longitude,
     radius: 100,
+    OnlyProfEmails: false,
   });
 
   const handleInputChange = (key, value) => {
@@ -107,7 +108,9 @@ export default function CreateNetwork({ orgId, setMainActivePage }) {
       Alert.alert("Success", "Network created successfully.");
       navigate.navigate("Home");
     } catch (error) {
-      console.error(error);
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       console.log(error);
 
       Alert.alert("Error", "Failed to create the network.");
@@ -128,6 +131,9 @@ export default function CreateNetwork({ orgId, setMainActivePage }) {
     if (selectedDate) {
       setNetwork((prev) => ({ ...prev, endDate: selectedDate }));
     }
+  };
+  const toggleSwitch = () => {
+    setNetwork((prev) => ({ ...prev, OnlyProfEmails: !prev.OnlyProfEmails }));
   };
   return (
     <View style={styles.container}>
@@ -189,17 +195,28 @@ export default function CreateNetwork({ orgId, setMainActivePage }) {
           </View>
         )}
         {activePage === 3 && (
-          <View style={styles.inputWrapper}>
-            <Text style={styles.signUpPromptText}>Network Type</Text>
-            <DropdownInput
-              data={[
-                { label: "Private", value: "Private" },
-                { label: "Public", value: "Public" },
-              ]}
-              value={network.type}
-              setValue={(text) => handleInputChange("type", text)}
-            />
-          </View>
+          <>
+            <View style={styles.inputWrapper}>
+              <Text style={styles.signUpPromptText}>Network Type</Text>
+              <DropdownInput
+                data={[
+                  { label: "Private", value: "Private" },
+                  { label: "Public", value: "Public" },
+                ]}
+                value={network.type}
+                setValue={(text) => handleInputChange("type", text)}
+              />
+            </View>
+            <View style={styles.switchContainer}>
+              <Text style={styles.switchLabel}>Only Professional Emails:</Text>
+              <Switch
+                value={network.OnlyProfEmails}
+                onValueChange={toggleSwitch}
+                trackColor={{ false: "#767577", true: COLORS.secondary }}
+                thumbColor={network.OnlyProfEmails ? "#FFF" : "#FFF"}
+              />
+            </View>
+          </>
         )}
 
         {activePage === 4 && (
@@ -207,6 +224,7 @@ export default function CreateNetwork({ orgId, setMainActivePage }) {
             <TextInput
               placeholder="Network size"
               value={network.size}
+              keyboardType="numeric"
               onChangeText={(text) => handleInputChange("size", text)}
               style={styles.input}
             />
@@ -215,8 +233,9 @@ export default function CreateNetwork({ orgId, setMainActivePage }) {
         {activePage === 5 && (
           <View style={styles.inputWrapper}>
             <TextInput
-              placeholder="Network radius"
+              placeholder="Network radius (in meters)"
               value={network.radius}
+              keyboardType="numeric"
               onChangeText={(text) => handleInputChange("radius", text)}
               style={styles.input}
             />
@@ -262,7 +281,7 @@ const styles = StyleSheet.create({
   },
   input: {
     height: 50,
-    width: 350,
+    minWidth: "80%",
     margin: 12,
     borderWidth: 1,
     padding: 10,
@@ -273,6 +292,20 @@ const styles = StyleSheet.create({
   datePickerContainer: {
     flexDirection: "row",
     alignItems: "center",
+  },
+  switchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 10,
+  },
+  switchLabel: {
+    fontFamily: FONTS.familyBold,
+    color: "#666",
+    fontSize: FONTS.medium,
+  },
+  label: {
+    paddingLeft: 20,
   },
   textWrapper: {
     marginBottom: 20,

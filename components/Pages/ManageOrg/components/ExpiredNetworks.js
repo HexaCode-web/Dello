@@ -8,7 +8,7 @@ import NetworkItem from "./NetworkItem"; // Import the separated component
 import sortBy from "sort-by";
 import { logout } from "../../../redux/slices/authSlice";
 
-export default function OldNetworks({ OrgId, setActivePage, activePage }) {
+export default function ExpiredNetworks({ OrgId, setActivePage, activePage }) {
   const User = useSelector((state) => state.auth.user);
   const [oldNetworks, setOldNetworks] = useState([]);
   const dispatch = useDispatch();
@@ -26,7 +26,10 @@ export default function OldNetworks({ OrgId, setActivePage, activePage }) {
       };
       const response = await axios(config);
       response.data.forEach((OldNetwork) => {
-        console.log(OldNetwork.OnlyProfEmails);
+        if (OldNetwork.Deleted) {
+          OldNetwork.isNotActive = true;
+          return;
+        }
 
         const endDate = new Date(OldNetwork.endDate);
         const currentDate = new Date();
@@ -39,14 +42,10 @@ export default function OldNetworks({ OrgId, setActivePage, activePage }) {
           (endDate.getFullYear() === currentDate.getFullYear() &&
             endDate.getMonth() === currentDate.getMonth() &&
             endDate.getDate() < currentDate.getDate());
-        OldNetwork.isPastDate = isPastDate;
+        OldNetwork.isNotActive = isPastDate;
       });
 
-      setOldNetworks(
-        response.data
-          .filter((network) => !network.Deleted)
-          .filter((network) => !network.isPastDate)
-      );
+      setOldNetworks(response.data.filter((network) => network.isNotActive));
     } catch (error) {
       if (error.status == 401) {
         dispatch(logout());

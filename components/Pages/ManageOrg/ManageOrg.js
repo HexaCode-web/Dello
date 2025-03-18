@@ -1,26 +1,33 @@
-import { Text, View, StyleSheet } from "react-native";
+import { Text, View, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import OldNetworks from "./components/OldNetworks";
 import { useCallback, useEffect, useState } from "react";
 import CreateNetwork from "./components/CreateNetwork";
 import { COLORS, FONTS } from "../../../theme";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import Settings from "./components/Settings";
 import axios from "axios";
 import SettingSection from "../../GeneralComponents/SettingSection.js";
 import TopBar from "../../GeneralComponents/TopBar.js";
 import DropdownSlider from "../../GeneralComponents/DropdownSlider.js";
+import { logout } from "../../redux/slices/authSlice.js";
+import ExpiredNetworks from "./components/ExpiredNetworks.js";
+
 export default function ManageOrg() {
   const navigation = useNavigation();
+  const dispatch = useDispatch();
 
   const User = useSelector((state) => state.auth.user);
   const associatedEmails = User.user.associatedEmails;
-
   const [activePage, setActivePage] = useState(0);
 
   const [activeOrg, setActiveOrg] = useState(null);
   const [orgData, setOrgData] = useState(null);
-
+  useFocusEffect(
+    useCallback(() => {
+      setActivePage(0);
+    }, [])
+  );
   const getActiveOrg = async (orgId) => {
     try {
       const config = {
@@ -35,6 +42,9 @@ export default function ManageOrg() {
       const response = await axios(config);
       return response.data; // return the organization data
     } catch (error) {
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       console.error("Error:", error.response?.status, error.message);
       if (error.response) {
         console.error("Backend Error Response:", error.response.data);
@@ -57,7 +67,11 @@ export default function ManageOrg() {
             );
 
             setOrgData(orgs); // Set the fetched data to state
+            setActiveOrg(orgs[0]);
           } catch (error) {
+            if (error.status == 401) {
+              dispatch(logout());
+            }
             console.error("Error fetching organizations:", error);
           }
         }
@@ -73,9 +87,79 @@ export default function ManageOrg() {
       navigation.navigate("Home");
     }
   };
+  const handleDeleteOrganization = () => {
+    Alert.alert(
+      "Delete Organization",
+      "Are you sure you want to delete your organization? This action cannot be undone.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel", // This will dismiss the alert
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            deleteOrganization();
+          },
+        },
+      ]
+    );
+  };
+
+  const deleteOrganization = async () => {
+    try {
+      console.log("Deleting Organization...");
+
+      // Call your API or backend service to delete the Organization
+      const response = await axios.delete(
+        `${process.env.EXPO_PUBLIC_ORG_API}/delete/${activeOrg._id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${User.Token}`, // Assuming you have a user token
+          },
+        }
+      );
+
+      // Handle successful deletion
+      if (response.status === 200) {
+        console.log("Organization deleted successfully");
+        setActiveOrg(null);
+        setOrgData(null);
+      } else {
+        console.error("Failed to delete Organization:", response.data.message);
+        Alert.alert(
+          "Error",
+          "Failed to delete Organization. Please try again."
+        );
+      }
+    } catch (error) {
+      if (error.status == 401) {
+        dispatch(logout());
+      }
+      console.error("Error deleting Organization:", error);
+
+      // Handle errors
+      if (error.response) {
+        Alert.alert("Error", error.response.data.message || "Server error");
+      } else if (error.request) {
+        Alert.alert("Error", "No response from server. Please try again.");
+      } else {
+        Alert.alert("Error", "An unexpected error occurred. Please try again.");
+      }
+    }
+  };
   return (
     <View style={styles.container}>
-      <TopBar hasReturnButton={true} returnFunction={handleInnerNavigation} />
+      <TopBar
+        hasReturnButton={true}
+        returnFunction={handleInnerNavigation}
+        Tabs={[
+          { Name: "Security", Page: "Security" },
+          { Name: "Profile", Page: "Profile" },
+          { Name: "Settings", Page: "Profiles" },
+        ]}
+      />
       {activePage == 0 && (
         <View style={styles.buttonWrapper}>
           <SettingSection
@@ -99,18 +183,34 @@ export default function ManageOrg() {
       {activeOrg ? (
         <View style={styles.buttonWrapper}>
           {activePage == 0 && (
-            <SettingSection
-              title="Settings"
-              onPress={() => {
-                setActivePage(3);
-              }}
-            />
+            <>
+              <SettingSection
+                title="Settings"
+                onPress={() => {
+                  setActivePage(3);
+                }}
+              />
+              <TouchableOpacity
+                style={[styles.section, styles.deleteSection]}
+                onPress={handleDeleteOrganization}
+              >
+                <Text style={[styles.sectionText, styles.deleteText]}>
+                  Delete Organization
+                </Text>
+                <Text style={styles.arrow}>›</Text>
+              </TouchableOpacity>
+            </>
           )}
+
           {activePage == 0 && (
             <View style={styles.boxWrapper}>
               <Text style={styles.title}>Networks</Text>
 
               <SettingSection title="Active" onPress={() => setActivePage(1)} />
+              <SettingSection
+                title="Non-Active"
+                onPress={() => setActivePage(4)}
+              />
 
               <SettingSection title="New" onPress={() => setActivePage(2)} />
             </View>
@@ -132,7 +232,16 @@ export default function ManageOrg() {
           setMainActivePage={setActivePage}
         />
       )}
-      {activePage === 3 && <Settings org={activeOrg} setOrgData={setOrgData} />}
+      {activePage === 3 && (
+        <Settings
+          org={activeOrg}
+          setOrgData={setOrgData}
+          setActiveOrg={setActiveOrg}
+        />
+      )}
+      {activePage === 4 && (
+        <ExpiredNetworks OrgId={activeOrg._id} setActivePage={setActivePage} />
+      )}
     </View>
   );
 }
@@ -224,6 +333,40 @@ const styles = StyleSheet.create({
     fontSize: FONTS.medium,
     fontFamily: FONTS.familyBold,
     color: "white",
+  },
+  section: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+
+    margin: 15,
+    padding: 15,
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  sectionText: {
+    fontSize: 16,
+    color: "#000",
+  },
+  arrow: {
+    fontSize: 20,
+    color: "#999",
+  },
+
+  deleteSection: {
+    marginTop: 20,
+  },
+  deleteText: {
+    color: "#FF3B30",
   },
 });
 /*

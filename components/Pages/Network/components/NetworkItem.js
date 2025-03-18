@@ -10,8 +10,9 @@ import {
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { COLORS, FONTS } from "../../../../theme";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import axios from "axios";
+import { logout } from "../../../redux/slices/authSlice";
 
 const NetworkItem = ({ network, onNetworkUpdate }) => {
   const User = useSelector((state) => state.auth.user);
@@ -19,6 +20,7 @@ const NetworkItem = ({ network, onNetworkUpdate }) => {
   const [org, setOrg] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(false);
+  const dispatch = useDispatch();
 
   const isPartOfOrg = () => {
     if (!User?.user.associatedEmails) return false;
@@ -87,6 +89,11 @@ const NetworkItem = ({ network, onNetworkUpdate }) => {
   const isDismissed = tempNetwork.Dismissed.some(
     (user) => user.userId === User.user._id
   );
+  const meetsRequirement = tempNetwork.OnlyProfEmails
+    ? User.user.associatedEmails.length > 0
+      ? true
+      : false
+    : true;
 
   const getOrgName = async () => {
     try {
@@ -157,6 +164,9 @@ const NetworkItem = ({ network, onNetworkUpdate }) => {
         onNetworkUpdate(updatedNetwork); // Notify parent of update
       }
     } catch (error) {
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       const errorMessage =
         error.response?.data?.message || error.message || "An error occurred";
       Alert.alert("Error", errorMessage);
@@ -190,6 +200,9 @@ const NetworkItem = ({ network, onNetworkUpdate }) => {
         onNetworkUpdate(updatedNetwork); // Notify parent of update
       }
     } catch (error) {
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       const errorMessage =
         error.response?.data?.message || error.message || "An error occurred";
       Alert.alert("Error", errorMessage);
@@ -248,9 +261,6 @@ const NetworkItem = ({ network, onNetworkUpdate }) => {
     );
   };
 
-  if (isDismissed) {
-    return null;
-  }
   const toggleNetworkActive = async (value) => {
     setLoading(true);
 
@@ -278,6 +288,9 @@ const NetworkItem = ({ network, onNetworkUpdate }) => {
         );
       }
     } catch (error) {
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       const errorMessage =
         error.response?.data?.message || error.message || "An error occurred";
       Alert.alert("Error", errorMessage);
@@ -313,11 +326,6 @@ const NetworkItem = ({ network, onNetworkUpdate }) => {
       <View style={styles.header}>
         <View>
           <Text style={styles.networkName}>{network.name}</Text>
-        </View>
-        <View style={styles.headerIcons}>
-          <TouchableOpacity disabled={!activeNetwork}>
-            <Feather name="bookmark" size={20} color="#4A0E4E" />
-          </TouchableOpacity>
         </View>
       </View>
       <View style={styles.networkDetails}>
@@ -360,32 +368,45 @@ const NetworkItem = ({ network, onNetworkUpdate }) => {
         <View style={styles.emptyBtn}>
           <Text style={styles.buttonTextEmpty}>Network expired or full</Text>
         </View>
+      ) : isDismissed ? (
+        ""
       ) : (
         <View style={styles.actions}>
-          {!isAccepted && (
-            <TouchableOpacity
-              style={[
-                styles.dismissButton,
-                !activeNetwork && styles.disabledButton,
-              ]}
-              onPress={addToDismiss}
-              disabled={!activeNetwork}
-            >
-              <Feather name="user-x" size={20} color="#FF3B30" />
-              <Text style={styles.dismissText}>Dismiss</Text>
-            </TouchableOpacity>
+          {meetsRequirement ? ( // Wrap the entire block in a single condition
+            <>
+              {!isAccepted && ( // Only show the dismiss button if the user is not accepted
+                <TouchableOpacity
+                  style={[
+                    styles.dismissButton,
+                    !activeNetwork && styles.disabledButton,
+                  ]}
+                  onPress={addToDismiss}
+                  disabled={!activeNetwork}
+                >
+                  <Feather name="user-x" size={20} color="#FF3B30" />
+                  <Text style={styles.dismissText}>Dismiss</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity
+                style={[
+                  styles.actionButton,
+                  isPending ? styles.pendingButton : styles.joinButton,
+                  !activeNetwork && styles.disabledButton,
+                ]}
+                onPress={joinNetwork}
+                disabled={isPending || isAccepted || loading || !activeNetwork}
+              >
+                {renderActionButton()}
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <Text style={[styles.detailLabel, { textAlign: "center" }]}>
+                you must associate a non-personal email account to join this
+                network
+              </Text>
+            </>
           )}
-          <TouchableOpacity
-            style={[
-              styles.actionButton,
-              isPending ? styles.pendingButton : styles.joinButton,
-              !activeNetwork && styles.disabledButton,
-            ]}
-            onPress={joinNetwork}
-            disabled={isPending || isAccepted || loading || !activeNetwork}
-          >
-            {renderActionButton()}
-          </TouchableOpacity>
         </View>
       )}
       {!activeNetwork && <View style={styles.disabledOverlay}></View>}

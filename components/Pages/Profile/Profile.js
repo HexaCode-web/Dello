@@ -82,7 +82,15 @@ export default function Profile() {
 
   return (
     <View style={styles.container}>
-      <TopBar Title="Profile" hasReturnButton={true} />
+      <TopBar
+        Title="Profile"
+        hasReturnButton={true}
+        Tabs={[
+          { Name: "Security", Page: "Security" },
+          { Name: "Settings", Page: "Profiles" },
+          { Name: "Organisation", Page: "Organizations" },
+        ]}
+      />
       <Header User={User} />
       {data && (
         <FlatList

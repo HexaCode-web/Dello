@@ -1,12 +1,4 @@
-import {
-  View,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  Alert,
-  ScrollView,
-} from "react-native";
-import react, { useCallback, useEffect, useState } from "react";
+import { View, StyleSheet, Text, TouchableOpacity, Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import ChangePassword from "./components/ChangePassword";
@@ -14,6 +6,10 @@ import ChangeEmail from "./components/ChangeEmail";
 import SettingSection from "../../GeneralComponents/SettingSection";
 import TopBar from "../../GeneralComponents/TopBar";
 import AddAssociatedEmail from "./components/AddAssociatedEmail";
+import { logout } from "../../redux/slices/authSlice";
+import { useDispatch, useSelector } from "react-redux";
+import axios from "axios";
+import Constants from "expo-constants";
 
 const settingsStack = createStackNavigator();
 export default function Security() {
@@ -26,8 +22,13 @@ export default function Security() {
         headerStyle: styles.return,
         header: () => (
           <TopBar
-            returnTarget={{ name: "Security", params: { screen: "Main" } }}
+            returnTarget={"Home"}
             hasReturnButton={true}
+            Tabs={[
+              { Name: "Profile", Page: "Profile" },
+              { Name: "Settings", Page: "Profiles" },
+              { Name: "Organisation", Page: "Organizations" },
+            ]}
           />
         ),
         cardStyle: styles.container,
@@ -50,19 +51,64 @@ export default function Security() {
 }
 const Main = () => {
   const navigation = useNavigation();
-
+  const User = useSelector((state) => state.auth.user);
+  const dispatch = useDispatch();
   const handleDeleteAccount = () => {
     Alert.alert(
       "Delete Account",
       "Are you sure you want to delete your account? This action cannot be undone.",
       [
-        { text: "Cancel", style: "cancel" },
+        {
+          text: "Cancel",
+          style: "cancel", // This will dismiss the alert
+        },
         {
           text: "Delete",
           style: "destructive",
+          onPress: () => {
+            deleteAccount();
+          },
         },
       ]
     );
+  };
+
+  const deleteAccount = async () => {
+    try {
+      console.log("Deleting account...");
+
+      // Call your API or backend service to delete the account
+      const response = await axios.delete(
+        `${process.env.EXPO_PUBLIC_PROFILE_API}/delete/${User.user._id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${User.Token}`, // Assuming you have a user token
+          },
+        }
+      );
+
+      // Handle successful deletion
+      if (response.status === 200) {
+        console.log("Account deleted successfully");
+        dispatch(logout());
+      } else {
+        console.error("Failed to delete account:", response.data.message);
+        Alert.alert("Error", "Failed to delete account. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      if (error.status == 401) {
+        dispatch(logout());
+      }
+      // Handle errors
+      if (error.response) {
+        Alert.alert("Error", error.response.data.message || "Server error");
+      } else if (error.request) {
+        Alert.alert("Error", "No response from server. Please try again.");
+      } else {
+        Alert.alert("Error", "An unexpected error occurred. Please try again.");
+      }
+    }
   };
 
   return (
@@ -92,6 +138,7 @@ const Main = () => {
         </Text>
         <Text style={styles.arrow}>›</Text>
       </TouchableOpacity>
+      <Text>version {Constants.expoConfig.version}</Text>
     </View>
   );
 };

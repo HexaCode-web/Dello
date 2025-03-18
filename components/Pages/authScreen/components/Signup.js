@@ -10,10 +10,13 @@ import Screen4 from "./signupScreens/Screen4";
 import { useGetLocation } from "../../../hooks/getLocation";
 import { COLORS, FONTS } from "../../../../theme";
 import { createStackNavigator } from "@react-navigation/stack";
+import { useDispatch } from "react-redux";
+import { logout } from "../../../redux/slices/authSlice";
 const Stack = createStackNavigator();
 
 export default function Signup({ navigation }) {
   const [location, error] = useGetLocation();
+  const dispatch = useDispatch();
 
   const [userInfo, setUserInfo] = useState({
     Email: "",

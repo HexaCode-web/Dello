@@ -11,7 +11,8 @@ import Screen4 from "./Screens/Screen4";
 import { useNavigation } from "@react-navigation/native";
 import { useDispatch, useSelector } from "react-redux";
 import TopBar from "../../GeneralComponents/TopBar";
-import { updateUserData } from "../../redux/slices/authSlice";
+import { logout, updateUserData } from "../../redux/slices/authSlice";
+
 export default function CreateOrg() {
   const User = useSelector((state) => state.auth.user);
   const navigation = useNavigation();
@@ -116,7 +117,9 @@ export default function CreateOrg() {
       }
     } catch (error) {
       console.log(error);
-
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       const errorMessage = error.response
         ? error.response.data.message || "OTP verification failed"
         : error.message;
@@ -161,6 +164,9 @@ export default function CreateOrg() {
         return false;
       }
     } catch (error) {
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       setErrorInForm(error.response.data.message);
       return false;
     }
@@ -243,10 +249,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F5FCFF",
-    paddingTop: 0,
-    paddingBottom: 20,
     paddingHorizontal: 20,
 
+    paddingBottom: 20,
     color: "black",
   },
   Error: {
@@ -255,13 +260,7 @@ const styles = StyleSheet.create({
     fontSize: FONTS.medium,
     fontFamily: FONTS.familyBold,
   },
-  return: {
-    position: "absolute",
-    top: 40,
-    left: 10,
-    padding: 10,
-    backgroundColor: "#F5FCFF",
-  },
+
   inputWrapper: {
     display: "flex",
     flexDirection: "column",

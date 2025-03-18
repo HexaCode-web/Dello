@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
-import { updateUserData } from "../../../redux/slices/authSlice";
+import { logout, updateUserData } from "../../../redux/slices/authSlice";
 import { COLORS, FONTS } from "../../../../theme";
 export default function ChangeName() {
   const dispatch = useDispatch();
@@ -48,6 +48,9 @@ export default function ChangeName() {
       Alert.alert("Success", response.data.message);
     } catch (error) {
       setLoading(false);
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       console.error("Error updating profile:", error);
       Alert.alert(
         "Error",

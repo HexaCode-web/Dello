@@ -12,9 +12,9 @@ import {
 } from "react-native";
 import TopBar from "../../GeneralComponents/TopBar";
 import Header from "../Profile/components/Header";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import PresentRole from "../Profile/components/PresentRole";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import BusinessDriver from "../Profile/components/BusinessDriver";
 import HighLights from "../Profile/components/HighLights";
 import Education from "../Profile/components/Education";
@@ -23,10 +23,17 @@ import Skills from "../Profile/components/Skills";
 import ImmediateNeeds from "../Profile/components/ImmediateNeeds";
 import axios from "axios";
 import { COLORS, FONTS } from "../../../theme";
+import { logout } from "../../redux/slices/authSlice";
 
 export default function ViewProfile({ route }) {
-  const { ProfileID, networkId, meetingRequest = null } = route.params;
-  console.log(networkId);
+  const {
+    ProfileID,
+    networkId,
+    meetingRequest = null,
+    meetRequestID,
+  } = route.params;
+  const dispatch = useDispatch();
+  const navigation = useNavigation();
 
   const [previousMeetingRequest, setPreviousMeetingRequest] = useState(null);
   const [User, setUser] = useState(null);
@@ -61,6 +68,9 @@ export default function ViewProfile({ route }) {
       );
       setUser(response.data);
     } catch (error) {
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       console.error("Error fetching admin profile:", error.message);
     } finally {
       setLoading(false);
@@ -82,11 +92,16 @@ export default function ViewProfile({ route }) {
         }
       );
       const network = await axios.get(
-        `${process.env.EXPO_PUBLIC_NETWORK_API}/getNetwork/${networkId}`
+        `${process.env.EXPO_PUBLIC_NETWORK_API}/getNetwork/${networkId}/${activeUser.user._id}`
       );
       setNetwork(network.data);
+      console.log(response.data.data);
+
       setPreviousMeetingRequest(response.data.data);
     } catch (error) {
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       console.error("Error fetching meeting request:", error);
       setPreviousMeetingRequest(null);
     }
@@ -125,6 +140,9 @@ export default function ViewProfile({ route }) {
       setIsModalVisible(false); // Close the modal
       setMeetingPurpose(""); // Clear the input
     } catch (error) {
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       console.error("Error creating meeting request:", error);
       const errorMessage =
         error.response?.data?.message || "An unknown error occurred";
@@ -147,6 +165,9 @@ export default function ViewProfile({ route }) {
       Alert.alert("Success", "Meeting request accepted");
       setPreviousMeetingRequest(response.data.data);
     } catch (error) {
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       console.error("Error creating meeting request:", error);
       const errorMessage =
         error.response?.data?.message || "An unknown error occurred";
@@ -169,6 +190,9 @@ export default function ViewProfile({ route }) {
       Alert.alert("Success", "Meeting request Rejected");
       setPreviousMeetingRequest(null);
     } catch (error) {
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       console.error("Error creating meeting Rejected:", error);
       const errorMessage =
         error.response?.data?.message || "An unknown error occurred";
@@ -216,6 +240,9 @@ export default function ViewProfile({ route }) {
           await getMeetRequest();
           setLoading(false);
         } catch (error) {
+          if (error.status == 401) {
+            dispatch(logout());
+          }
           console.error("Error fetching data:", error);
         }
       };
@@ -279,11 +306,21 @@ export default function ViewProfile({ route }) {
           {previousMeetingRequest ? (
             <View style={styles.buttonWrapper}>
               {requestOwner === "Accepted" && (
-                <View style={styles.emptyBtn}>
-                  <Text style={styles.buttonTextEmpty}>
-                    Meeting request already accepted
-                  </Text>
-                </View>
+                <TouchableOpacity
+                  style={styles.emptyBtn}
+                  onPress={() => {
+                    navigation.navigate("chatRoom", {
+                      ProfileID,
+                      roomName: `${User.FirstName} ${User.LastName}`,
+                      networkId,
+                      meetRequest: previousMeetingRequest,
+                      meetRequestID:
+                        meetRequestID || previousMeetingRequest?._id,
+                    });
+                  }}
+                >
+                  <Text style={styles.buttonTextEmpty}>Chat Now </Text>
+                </TouchableOpacity>
               )}
               {requestOwner === "A" && (
                 <View style={styles.emptyBtn}>
@@ -326,14 +363,16 @@ export default function ViewProfile({ route }) {
               )}
             </View>
           ) : (
-            <View style={styles.buttonWrapper}>
-              <TouchableOpacity
-                onPress={handleCreateMeetingRequest}
-                style={[styles.DefaultButton, { width: "80%" }]}
-              >
-                <Text style={styles.buttonText}>Request to meet</Text>
-              </TouchableOpacity>
-            </View>
+            networkId && (
+              <View style={styles.buttonWrapper}>
+                <TouchableOpacity
+                  onPress={handleCreateMeetingRequest}
+                  style={[styles.DefaultButton, { width: "80%" }]}
+                >
+                  <Text style={styles.buttonText}>Request to meet</Text>
+                </TouchableOpacity>
+              </View>
+            )
           )}
         </>
       )}

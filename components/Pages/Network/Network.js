@@ -12,9 +12,10 @@ import NetworkItem from "./components/NetworkItem";
 import axios from "axios";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import TopBar from "../../GeneralComponents/TopBar";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import sortBy from "sort-by";
 import { COLORS, FONTS } from "../../../theme";
+import { logout } from "../../redux/slices/authSlice";
 
 const Network = () => {
   const User = useSelector((state) => state.auth.user);
@@ -25,6 +26,7 @@ const Network = () => {
     { Name: "Settings", Page: "Profiles" },
     { Name: "Organisation", Page: "Organizations" },
   ];
+  const dispatch = useDispatch();
 
   const { location, error } = useSelector((state) => state.location);
   const [isProfileComplete, setIsProfileComplete] = useState(false);
@@ -33,8 +35,10 @@ const Network = () => {
   const [acceptedNetworks, setAcceptedNetworks] = useState([]);
   const [dismissedNetworks, setDismissedNetworks] = useState([]);
   const [pendingNetworks, setPendingNetworks] = useState([]);
+  const [expiredNetworks, setExpiredNetworks] = useState([]);
   const [availableNetworks, setAvailableNetworks] = useState([]);
   const [activeTab, setActiveTab] = useState("Available");
+
   function checkProfile() {
     const { user } = User;
 
@@ -88,6 +92,9 @@ const Network = () => {
       );
       setNetworks(nearbyNetworks.data);
     } catch (error) {
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       console.error("Error fetching networks:", error);
     } finally {
       setLoading(false);
@@ -99,6 +106,7 @@ const Network = () => {
     const dismissed = [];
     const pending = [];
     const available = [];
+    const expired = [];
     function calculateDistance(lat1, lng1, lat2, lng2) {
       const toRad = (value) => (value * Math.PI) / 180;
 
@@ -152,8 +160,10 @@ const Network = () => {
           endDate.getMonth() === currentDate.getMonth() &&
           endDate.getDate() < currentDate.getDate());
       (network.Active = isPastDate ? 1 : 0), (network.distance = distance);
-      if (network.Accepted.find((user) => user.userId === User.user._id)) {
-        accepted.push(network);
+      if (network.Deleted) return;
+
+      if (isPastDate) {
+        expired.push(network);
       } else if (
         network.Dismissed.find((user) => user.userId === User.user._id)
       ) {
@@ -162,6 +172,10 @@ const Network = () => {
         network.Pending.find((user) => user.userId === User.user._id)
       ) {
         pending.push(network);
+      } else if (
+        network.Accepted.find((user) => user.userId === User.user._id)
+      ) {
+        accepted.push(network);
       } else {
         available.push(network);
       }
@@ -171,6 +185,7 @@ const Network = () => {
     setDismissedNetworks(dismissed);
     setPendingNetworks(pending);
     setAvailableNetworks(available);
+    setExpiredNetworks(expired);
   }, [networks, User.user._id]);
 
   // Handle network updates from child component
@@ -186,6 +201,7 @@ const Network = () => {
     useCallback(() => {
       getNetworks();
       setIsProfileComplete(checkProfile);
+      // setIsProfileComplete(true);
     }, [location, activeTab])
   );
 
@@ -209,6 +225,8 @@ const Network = () => {
         return pendingNetworks;
       case "Dismissed":
         return dismissedNetworks;
+      case "Expired":
+        return expiredNetworks;
       case "Available":
       default:
         return availableNetworks;
@@ -221,7 +239,7 @@ const Network = () => {
 
   return (
     <View style={styles.container}>
-      <TopBar Tabs={tabsAr} />
+      <TopBar Tabs={tabsAr} hasReturnButton={false} />
       {isProfileComplete ? (
         <>
           <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />

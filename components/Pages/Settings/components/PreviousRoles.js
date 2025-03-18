@@ -16,7 +16,7 @@ import { Feather } from "@expo/vector-icons";
 import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
 import { COLORS, FONTS } from "../../../../theme";
-import { updateUserData } from "../../../redux/slices/authSlice";
+import { logout, updateUserData } from "../../../redux/slices/authSlice";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 const PreviousRoles = ({ navigation }) => {
@@ -91,6 +91,9 @@ const PreviousRoles = ({ navigation }) => {
         setSaved(true);
       }
     } catch (error) {
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       console.log(error);
       setError(error.message);
     }
@@ -117,6 +120,9 @@ const PreviousRoles = ({ navigation }) => {
       }
     } catch (error) {
       console.log(error);
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       Alert.alert("Error", error.message);
     }
   };
@@ -145,6 +151,9 @@ const PreviousRoles = ({ navigation }) => {
         dispatch(updateUserData(response.data.user));
       }
     } catch (error) {
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       console.log(error);
       Alert.alert("Error", error.message);
     }

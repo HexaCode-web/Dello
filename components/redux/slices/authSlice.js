@@ -5,12 +5,9 @@ const initialState = {
   isLoggedIn: false,
   user: null,
   error: null,
+  notificationsCount: 0,
 };
 
-//configure the slice
-//name
-//initial state
-//reducer(actions)
 export const userSlice = createSlice({
   name: "auth",
   initialState,
@@ -23,6 +20,9 @@ export const userSlice = createSlice({
     updateUserData: (state, payload) => {
       state.user = { Token: state.user.Token, user: payload.payload };
     },
+    updateNotificationsCount: (state, payload) => {
+      state.notificationsCount = payload.payload;
+    },
     logout: (state) => {
       state.isLoggedIn = false;
       state.user = null;
@@ -31,6 +31,7 @@ export const userSlice = createSlice({
 });
 
 // Export actions to be used in components
-export const { login, logout, updateUserData } = userSlice.actions;
+export const { login, logout, updateUserData, updateNotificationsCount } =
+  userSlice.actions;
 // Export the reducer to be added to the store
 export default userSlice.reducer;

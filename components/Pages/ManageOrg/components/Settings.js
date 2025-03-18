@@ -5,15 +5,17 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  ScrollView,
 } from "react-native";
 import { COLORS, FONTS } from "../../../../theme";
 import { useCallback, useState } from "react";
 import axios from "axios";
 import DropdownSlider from "../../../GeneralComponents/DropdownSlider";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useFocusEffect } from "@react-navigation/native";
-
-export default function Settings({ org, setOrgData }) {
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { logout } from "../../../redux/slices/authSlice";
+export default function Settings({ org, setOrgData, setActiveOrg }) {
   const [loading, setLoading] = useState(false);
   const User = useSelector((state) => state.auth.user);
   const [formData, setFormData] = useState({
@@ -25,6 +27,7 @@ export default function Settings({ org, setOrgData }) {
   const [domainUsers, setDomainUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [error, setError] = useState("");
+  const dispatch = useDispatch();
 
   const typeData = [
     "Financial Services",
@@ -81,6 +84,9 @@ export default function Settings({ org, setOrgData }) {
         )
       );
     } catch (error) {
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       setError(error.response?.data?.message || "Error updating organization");
     } finally {
       setLoading(false);
@@ -108,6 +114,9 @@ export default function Settings({ org, setOrgData }) {
 
           setDomainUsers(filteredUsers);
         } catch (error) {
+          if (error.status == 401) {
+            dispatch(logout());
+          }
           console.error("Error fetching users:", error);
           throw error;
         }
@@ -115,6 +124,32 @@ export default function Settings({ org, setOrgData }) {
       await fetchUsersByDomain(Domain);
     }, [])
   );
+  const RemoveAdmin = async (email) => {
+    try {
+      const response = await axios.delete(
+        `${process.env.EXPO_PUBLIC_ORG_API}/removeAdmin/${email}`,
+        {
+          headers: {
+            Accept: "application/json",
+            "Accept-Language": "en",
+            "Content-Type": "application/json",
+            authorization: `Bearer ${User.Token}`,
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        setActiveOrg(response.data.organization);
+        Alert.alert("Success", "Admin Removed");
+      }
+    } catch (error) {
+      console.log(error);
+      if (error.status == 401) {
+        dispatch(logout());
+      }
+      Alert.alert("Error", error.message);
+    }
+  };
   const InviteUser = async () => {
     setLoading(true);
     setError("");
@@ -136,13 +171,15 @@ export default function Settings({ org, setOrgData }) {
 
       // Handle the response
       if (response.status === 200) {
-        console.log("Admin added successfully:", response.data);
         Alert.alert("Success", "Admin invitation sent successfully!");
         setSelectedUser(null);
       } else {
         throw new Error(response.data.message || "Failed to send invitation");
       }
     } catch (error) {
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       console.error("Error inviting user:", error);
       setError(error.response?.data?.message || error.message);
       Alert.alert("Error", error.response?.data?.message || error.message);
@@ -152,7 +189,7 @@ export default function Settings({ org, setOrgData }) {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <View style={styles.inputArea}>
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Organization Name</Text>
@@ -228,18 +265,49 @@ export default function Settings({ org, setOrgData }) {
             }}
           />
         </View>
-      </View>
-      {selectedUser && (
-        <View style={styles.buttonWrapper}>
-          <TouchableOpacity
-            style={[styles.DefaultButton, loading && styles.disabledButton]}
-            onPress={InviteUser}
-            disabled={loading}
-          >
-            <Text style={styles.buttonText}>Invite</Text>
-          </TouchableOpacity>
+        {selectedUser && (
+          <View style={styles.buttonWrapper}>
+            <TouchableOpacity
+              style={[styles.DefaultButton, loading && styles.disabledButton]}
+              onPress={InviteUser}
+              disabled={loading}
+            >
+              <Text style={styles.buttonText}>Invite</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Admins</Text>
+          {org?.admins.map((email, index) => {
+            if (
+              User.user.associatedEmails.find(
+                (userEmail) => userEmail.email === email.Email
+              )
+            ) {
+              return null;
+            }
+
+            return (
+              <View key={index} style={styles.emailCard}>
+                <Text>{email.Email}</Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    RemoveAdmin(email.Email);
+                  }}
+                >
+                  <Ionicons
+                    name="trash-outline"
+                    size={24}
+                    color={COLORS.secondary}
+                    style={styles.icon}
+                  />
+                </TouchableOpacity>
+              </View>
+            );
+          })}
         </View>
-      )}
+      </View>
+
       {error ? <Text style={styles.Error}>{error}</Text> : null}
 
       <View style={styles.buttonWrapper}>
@@ -253,7 +321,7 @@ export default function Settings({ org, setOrgData }) {
           </Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -261,7 +329,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F5FCFF",
-    justifyContent: "space-between",
     color: "black",
   },
   inputArea: {
@@ -298,6 +365,18 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     gap: 20,
     marginTop: 20,
+  },
+  emailCard: {
+    borderWidth: 1,
+    borderColor: COLORS.borders,
+    borderRadius: 10,
+    display: "flex",
+    padding: 20,
+    marginTop: 20,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center", // Add this to vertically align the icon and text
+    width: "95%", // Ensure the container takes up full width
   },
   DefaultButton: {
     width: "90%",

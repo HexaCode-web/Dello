@@ -16,31 +16,54 @@ const NotificationScreen = () => {
   const navigation = useNavigation();
 
   const [notifications, setNotifications] = React.useState([]);
+  const markAllNotificationsAsSeen = async () => {
+    try {
+      await fetch(
+        `${process.env.EXPO_PUBLIC_NOTIFICATIONS_API}/markAllAsSeen/${User.user._id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Accept-Language": "en",
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${User.Token}`,
+          },
+        }
+      );
+      setNotifications((prevNotifications) =>
+        prevNotifications.map((notification) => ({
+          ...notification,
+          seen: true,
+        }))
+      );
+    } catch (err) {
+      console.error("Error marking notifications as seen:", err);
+    }
+  };
+  const fetchData = async () => {
+    setNotifications([]);
+    try {
+      // Fetch notifications from an API
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_NOTIFICATIONS_API}/getNotifications/${User.user._id}`,
+        {
+          headers: {
+            "Accept-Language": "en",
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${User.Token}`, // Add the token to the Authorization header
+          },
+        }
+      );
+      const data = await response.json();
+
+      setNotifications(data);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
   useFocusEffect(
     useCallback(() => {
-      const fetchData = async () => {
-        setNotifications([]);
-        try {
-          // Fetch notifications from an API
-          const response = await fetch(
-            `${process.env.EXPO_PUBLIC_NOTIFICATIONS_API}/getNotifications/${User.user._id}`,
-            {
-              headers: {
-                "Accept-Language": "en",
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${User.Token}`, // Add the token to the Authorization header
-              },
-            }
-          );
-          const data = await response.json();
-
-          setNotifications(data);
-        } catch (err) {
-          setError(err.message);
-        }
-      };
-
       fetchData();
+      markAllNotificationsAsSeen();
     }, [])
   );
   const renderNotification = ({ item }) => {
@@ -69,13 +92,15 @@ const NotificationScreen = () => {
           !item.seen && styles.unreadNotification,
         ]}
         onPress={() => {
-          navigation.navigate("ViewProfile", {
-            ProfileID: item.senderID,
-          });
+          if (item.type === "meet Request") {
+            navigation.navigate("ViewProfile", {
+              ProfileID: item.metadata.senderID,
+            });
+          }
         }}
       >
         <View style={styles.notificationContent}>
-          <Text style={styles.notificationTitle}>Meet Request</Text>
+          <Text style={styles.notificationTitle}>{item.type}</Text>
           <Text style={styles.notificationDescription}>{item.message}</Text>
           <Text style={styles.timestamp}>{getTimeAgo(item.createdAt)}</Text>
         </View>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -10,16 +10,27 @@ import {
   ActivityIndicator,
   Switch,
 } from "react-native";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import axios from "axios";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import TopBar from "../../GeneralComponents/TopBar";
 import { COLORS, FONTS } from "../../../theme";
+import { logout } from "../../redux/slices/authSlice";
 
 const EditNetwork = ({ route }) => {
   const { network } = route.params;
+
+  const dispatch = useDispatch();
+
   const [admin, setAdmin] = useState(null);
+  const User = useSelector((state) => state.auth.user);
+  const [loading, setLoading] = useState(false);
+  const [networkData, setNetworkData] = useState(null);
+
+  const [showStartDate, setShowStartDate] = useState(false);
+  const [showEndDate, setShowEndDate] = useState(false);
+  const [showRenewalDate, setShowRenewalDate] = useState(false);
 
   const getProfile = async (adminId) => {
     try {
@@ -28,6 +39,9 @@ const EditNetwork = ({ route }) => {
       );
       setAdmin(response.data);
     } catch (error) {
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       console.error("Error fetching admin profile:", error.message);
     }
   };
@@ -37,25 +51,31 @@ const EditNetwork = ({ route }) => {
       getProfile(network.adminId); // Fetch profile based on adminId
     }
   }, [network.adminId]);
-  const User = useSelector((state) => state.auth.user);
-  const [loading, setLoading] = useState(false);
-  const [networkData, setNetworkData] = useState({
-    name: network.name,
-    licenseID: network.licenseID || "",
-    licenseType: network.licenseType || "",
-    startDate: new Date(network.startDate),
-    endDate: new Date(network.endDate),
-    renewalPoint: network.renewalPoint ? new Date(network.renewalPoint) : null,
-    type: network.type,
-    size: network.size.toString(),
-    radius: network.radius.toString(),
-    coordinates: network.coordinates,
-  });
-
-  const [showStartDate, setShowStartDate] = useState(false);
-  const [showEndDate, setShowEndDate] = useState(false);
-  const [showRenewalDate, setShowRenewalDate] = useState(false);
-
+  useFocusEffect(
+    useCallback(() => {
+      setNetworkData({
+        name: network.name,
+        licenseID: network.licenseID || "",
+        licenseType: network.licenseType || "",
+        startDate: new Date(network.startDate),
+        endDate: new Date(network.endDate),
+        renewalPoint: network.renewalPoint
+          ? new Date(network.renewalPoint)
+          : null,
+        type: network.type,
+        size: network.size.toString(),
+        radius: network.radius.toString(),
+        coordinates: network.coordinates,
+        OnlyProfEmails: network?.OnlyProfEmails,
+      });
+    }, [network]) // Add `network` as a dependency
+  );
+  const toggleSwitch = () => {
+    setNetworkData((prev) => ({
+      ...prev,
+      OnlyProfEmails: !prev.OnlyProfEmails,
+    }));
+  };
   const handleDateChange = (event, selectedDate, dateType) => {
     if (event.type === "set") {
       const currentDate = selectedDate;
@@ -96,7 +116,7 @@ const EditNetwork = ({ route }) => {
       Alert.alert("Error", "Radius must be a positive number");
       return false;
     }
-    if (network.endDate < network.startDate) {
+    if (networkData.endDate < networkData.startDate) {
       Alert.alert("Error", "End date must be after start date");
       return false;
     }
@@ -130,6 +150,9 @@ const EditNetwork = ({ route }) => {
         Alert.alert("Success", "Network updated successfully");
       }
     } catch (error) {
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       const errorMessage =
         error.response?.data?.message ||
         "An error occurred while updating the network";
@@ -152,7 +175,7 @@ const EditNetwork = ({ route }) => {
         <Text style={styles.label}>Network Name</Text>
         <TextInput
           style={styles.input}
-          value={networkData.name}
+          value={networkData?.name}
           onChangeText={(text) =>
             setNetworkData((prev) => ({ ...prev, name: text }))
           }
@@ -164,7 +187,7 @@ const EditNetwork = ({ route }) => {
           <TouchableOpacity
             style={[
               styles.typeButton,
-              networkData.type === "Public" && styles.selectedType,
+              networkData?.type === "Public" && styles.selectedType,
             ]}
             onPress={() =>
               setNetworkData((prev) => ({ ...prev, type: "Public" }))
@@ -172,7 +195,7 @@ const EditNetwork = ({ route }) => {
           >
             <Text
               style={
-                networkData.type === "Public"
+                networkData?.type === "Public"
                   ? styles.selectedTypeText
                   : styles.typeText
               }
@@ -183,7 +206,7 @@ const EditNetwork = ({ route }) => {
           <TouchableOpacity
             style={[
               styles.typeButton,
-              networkData.type === "Private" && styles.selectedType,
+              networkData?.type === "Private" && styles.selectedType,
             ]}
             onPress={() =>
               setNetworkData((prev) => ({ ...prev, type: "Private" }))
@@ -191,7 +214,7 @@ const EditNetwork = ({ route }) => {
           >
             <Text
               style={
-                networkData.type === "Private"
+                networkData?.type === "Private"
                   ? styles.selectedTypeText
                   : styles.typeText
               }
@@ -200,11 +223,19 @@ const EditNetwork = ({ route }) => {
             </Text>
           </TouchableOpacity>
         </View>
-
+        <View style={styles.switchContainer}>
+          <Text style={styles.switchLabel}>Only Professional Emails:</Text>
+          <Switch
+            value={networkData?.OnlyProfEmails}
+            onValueChange={toggleSwitch}
+            trackColor={{ false: "#767577", true: COLORS.secondary }}
+            thumbColor={networkData?.OnlyProfEmails ? "#FFF" : "#FFF"}
+          />
+        </View>
         <Text style={styles.label}>Size</Text>
         <TextInput
           style={styles.input}
-          value={networkData.size}
+          value={networkData?.size}
           onChangeText={(text) =>
             setNetworkData((prev) => ({ ...prev, size: text }))
           }
@@ -215,7 +246,7 @@ const EditNetwork = ({ route }) => {
         <Text style={styles.label}>Radius (meters)</Text>
         <TextInput
           style={styles.input}
-          value={networkData.radius}
+          value={networkData?.radius}
           onChangeText={(text) =>
             setNetworkData((prev) => ({ ...prev, radius: text }))
           }
@@ -228,7 +259,7 @@ const EditNetwork = ({ route }) => {
           style={styles.dateButton}
           onPress={() => setShowStartDate(true)}
         >
-          <Text>{networkData.startDate.toLocaleDateString()}</Text>
+          <Text>{networkData?.startDate.toLocaleDateString()}</Text>
         </TouchableOpacity>
 
         <Text style={styles.label}>End Date</Text>
@@ -236,17 +267,17 @@ const EditNetwork = ({ route }) => {
           style={styles.dateButton}
           onPress={() => setShowEndDate(true)}
         >
-          <Text>{networkData.endDate.toLocaleDateString()}</Text>
+          <Text>{networkData?.endDate.toLocaleDateString()}</Text>
         </TouchableOpacity>
 
         {(showStartDate || showEndDate || showRenewalDate) && (
           <DateTimePicker
             value={
               showStartDate
-                ? networkData.startDate
+                ? networkData?.startDate
                 : showEndDate
-                ? networkData.endDate
-                : networkData.renewalPoint || new Date()
+                ? networkData?.endDate
+                : networkData?.renewalPoint || new Date()
             }
             mode="date"
             onChange={(event, date) => {
@@ -353,6 +384,17 @@ const styles = StyleSheet.create({
     fontSize: FONTS.medium,
     fontFamily: FONTS.familyBold,
     color: "white",
+  },
+  switchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 10,
+  },
+  switchLabel: {
+    fontFamily: FONTS.familyBold,
+    color: "#666",
+    fontSize: FONTS.medium,
   },
 });
 

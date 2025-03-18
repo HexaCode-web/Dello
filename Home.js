@@ -42,6 +42,8 @@ import NavigationAwareToast from "./components/GeneralComponents/NavigationAware
 import NetworkIcon from "./assets/network.png";
 import NetworkActive from "./assets/networkActive.png";
 import EditNetwork from "./components/Pages/EditNetwork/EditNetwork";
+import ChatRoom from "./components/Pages/ChatRoom/ChatRoom";
+
 export default function Home() {
   const dispatch = useDispatch();
   const User = useSelector((state) => state.auth.user);
@@ -67,6 +69,7 @@ export default function Home() {
       dispatch(stopLocationTracking());
     };
   }, []);
+
   useEffect(() => {
     const updateLocationToServer = async () => {
       if (location && User) {
@@ -115,7 +118,7 @@ export default function Home() {
 
   return (
     <NavigationContainer>
-      <StatusBar style="auto" />
+      <StatusBar style="light" />
 
       {isLoggedIn ? (
         <SocketProvider userId={User.user._id}>
@@ -156,7 +159,17 @@ export default function Home() {
                   <AntDesign
                     name="message1"
                     size={24}
-                    color={focused ? "white" : "gray"}
+                    color={
+                      focused
+                        ? "white"
+                        : User.user.rAInChat[User.user.rAInChat?.length - 1]
+                            ?.role === "AI" &&
+                          User.user.rAInChat[
+                            User.user.rAInChat?.length - 1
+                          ].text.includes("Welcome to")
+                        ? "green"
+                        : "gray"
+                    }
                   />
                 ),
               }}
@@ -209,6 +222,11 @@ export default function Home() {
               }}
             />
 
+            <Tab.Screen
+              name="chatRoom"
+              component={ChatRoom}
+              options={{ tabBarItemStyle: { display: "none" } }} // Hide item from tabBar
+            />
             <Tab.Screen
               name="NetworkDetails"
               component={ManageNetwork}

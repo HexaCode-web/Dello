@@ -11,6 +11,8 @@ import {
 import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
 import { COLORS, FONTS } from "../../../../theme";
+import { logout } from "../../../redux/slices/authSlice";
+
 export default function ChangePassword() {
   const dispatch = useDispatch();
   const User = useSelector((state) => state.auth.user);
@@ -43,6 +45,9 @@ export default function ChangePassword() {
       Alert.alert("Success", response.data.message);
     } catch (error) {
       setLoading(false);
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       console.error("Error updating profile:", error);
       Alert.alert(
         "Error",

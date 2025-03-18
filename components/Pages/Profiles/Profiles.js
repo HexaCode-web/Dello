@@ -15,12 +15,7 @@ export default function Profiles() {
         headerShown: true,
         headerStyle: styles.return,
         cardStyle: styles.container,
-        header: () => (
-          <TopBar
-            returnTarget={{ name: "Profiles", params: { screen: "Main" } }}
-            hasReturnButton={true}
-          />
-        ),
+        header: () => <TopBar returnTarget="Home" hasReturnButton={true} />,
       }}
       initialRouteName="Main"
       detachInactiveScreens={true}
@@ -47,7 +42,7 @@ const Main = () => {
       />
       <SettingSection
         title="Edit"
-        onPress={() => navigation.navigate("Settings")}
+        onPress={() => navigation.navigate("Settings", { screen: "Main" })}
       />
     </View>
   );

@@ -8,6 +8,8 @@ import {
 
 import React, { useState } from "react";
 import { COLORS, FONTS } from "../../../../theme";
+import { useSelector } from "react-redux";
+import DropdownSlider from "../../../GeneralComponents/DropdownSlider";
 
 export default function Screen2({
   onChangeEmailFunction,
@@ -16,6 +18,10 @@ export default function Screen2({
   setErrorInForm,
 }) {
   const [isValidEmail, setIsValidEmail] = useState(true);
+  const User = useSelector((state) => state.auth.user);
+  const unusedEmails = User.user.associatedEmails.filter(
+    (email) => email.OrgId === ""
+  );
 
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -45,14 +51,31 @@ export default function Screen2({
   };
   return (
     <>
-      <View style={styles.textWrapper}></View>
+      {unusedEmails.length > 0 && (
+        <View style={styles.textWrapper}>
+          <Text style={styles.text}>
+            we found associated Email{unusedEmails.length > 1 ? "s" : ""} that
+            aren't attached to any Organization.
+          </Text>
+          <Text style={styles.text}>
+            Please choose one of them or add a new one
+          </Text>
+        </View>
+      )}
+      {unusedEmails.length > 0 && (
+        <DropdownSlider
+          data={unusedEmails.map((email) => email.email)}
+          placeholder="Select Email"
+          onSelect={(item) => handleEmailChange(item)}
+        />
+      )}
       <View style={styles.inputsWrapper}>
         <View style={styles.inputWrapper}>
           <TextInput
             style={styles.input}
             onChangeText={(value) => handleEmailChange(value)}
             value={userInfo.orgEmailId}
-            placeholder="Organization Email"
+            placeholder="Add a new Organization Email"
           />
         </View>
       </View>
@@ -79,12 +102,13 @@ const styles = StyleSheet.create({
   inputWrapper: {
     display: "flex",
     flexDirection: "column",
-    justifyContent: "center",
-    alignItems: "center",
+  },
+  inputsWrapper: {
+    flex: 1,
   },
   input: {
     height: 50,
-    width: "95%",
+
     margin: 12,
     borderWidth: 1,
     padding: 10,
@@ -92,47 +116,27 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.familyBold,
     borderRadius: 30,
   },
-  inputsWrapper: {
-    flex: 1,
-    width: "90%",
-  },
-  textWrapper: {
-    marginBottom: 20,
-    marginLeft: 5,
-    display: "flex",
-    justifyContent: "flex-start",
-    alignItems: "flex-start",
-    gap: 10,
-    width: "90%",
-  },
   Header: {
     fontSize: FONTS.large,
     fontFamily: FONTS.familyBold,
-    marginRight: "auto",
   },
-  signUpPrompt: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 10,
-    marginBottom: 10,
+  text: {
+    textAlign: "left",
+    fontSize: FONTS.medium,
+    fontFamily: FONTS.familyBold,
   },
   signUpPromptText: {
     fontSize: FONTS.medium,
     fontFamily: FONTS.familyLight,
-
     color: COLORS.textSecondary,
   },
-  signUpPromptBtn: {
+  textWrapper: {
     display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    textAlign: "center",
+    padding: 20,
+    gap: 10,
   },
-
   buttonWrapper: {
-    width: "90%",
+    width: "100%",
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 10,
@@ -156,11 +160,7 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
-  buttonTextEmpty: {
-    fontSize: FONTS.medium,
-    fontFamily: FONTS.familyBold,
-    color: COLORS.secondary,
-  },
+
   buttonText: {
     fontSize: FONTS.medium,
     fontFamily: FONTS.familyBold,

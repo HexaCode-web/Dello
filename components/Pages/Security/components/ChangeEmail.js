@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
-import { updateUserData } from "../../../redux/slices/authSlice";
+import { logout, updateUserData } from "../../../redux/slices/authSlice";
 import { COLORS, FONTS } from "../../../../theme";
 import { createStackNavigator } from "@react-navigation/stack";
 import CodeInput from "../../authScreen/components/signupScreens/CodeInput";
@@ -37,6 +37,9 @@ export default function ChangeEmail() {
       Alert.alert("OTP sent successfully");
       return true; // Indicate success
     } catch (error) {
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       const errorMessage = error.response
         ? error.response.data.message || "OTP verification failed"
         : error.message;
@@ -97,7 +100,9 @@ export default function ChangeEmail() {
       }
     } catch (error) {
       console.log(error);
-
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       const errorMessage = error.response
         ? error.response.data.message || "OTP verification failed"
         : error.message;
@@ -140,6 +145,9 @@ export default function ChangeEmail() {
       Alert.alert("Success", response.data.message);
       return true;
     } catch (error) {
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       setLoading(false);
       console.error("Error updating profile:", error);
       Alert.alert(

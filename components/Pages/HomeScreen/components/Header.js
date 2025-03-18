@@ -9,16 +9,18 @@ import { COLORS, FONTS } from "../../../../theme";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
-import { useSelector } from "react-redux";
+
+import { useDispatch, useSelector } from "react-redux";
+import { logout } from "../../../redux/slices/authSlice";
 export default function Header() {
   const { location, error } = useSelector((state) => state.location);
+  const dispatch = useDispatch();
 
   const [address, setAddress] = useState("");
   const [loading, setLoading] = useState(true);
 
   const fetchAddress = async () => {
     setLoading(true);
-    setAddress(null);
     let latitude = location.coords.latitude;
     let longitude = location.coords.longitude;
 
@@ -51,6 +53,9 @@ export default function Header() {
         setAddress("Address not found");
       }
     } catch (error) {
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       console.log("Error fetching address:", error);
       setAddress("Error fetching address");
     } finally {
@@ -80,14 +85,7 @@ export default function Header() {
         />
       </View>
       <View style={styles.addressContainer}>
-        {loading ? (
-          <ActivityIndicator size="large" color="#4B164C" />
-        ) : (
-          <>
-            {/* <EvilIcons name="location" size={30} color={COLORS.primary} /> */}
-            <Text style={styles.address}>{address}</Text>
-          </>
-        )}
+        <Text style={styles.address}>{address}</Text>
       </View>
     </View>
   );

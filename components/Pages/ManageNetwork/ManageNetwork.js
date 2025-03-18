@@ -12,11 +12,21 @@ import { format } from "date-fns";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import Entypo from "@expo/vector-icons/Entypo";
 import axios from "axios";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import TopBar from "../../GeneralComponents/TopBar";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { COLORS, FONTS } from "../../../theme";
-const StatusSection = ({ title, data, onAccept, onReject, userProfiles }) => {
+import { logout } from "../../redux/slices/authSlice";
+
+const StatusSection = ({
+  title,
+  data,
+  onAccept,
+  onReject,
+  userProfiles,
+  orgId,
+}) => {
+  const User = useSelector((state) => state.auth.user);
   const navigation = useNavigation();
   if (data.length === 0) {
     return (
@@ -52,7 +62,12 @@ const StatusSection = ({ title, data, onAccept, onReject, userProfiles }) => {
             <Text style={styles.userId}>
               [ {userProfiles[item.userId]?.FirstName}{" "}
               {userProfiles[item.userId]?.LastName} -{" "}
-              {userProfiles[item.userId]?.email}]
+              {userProfiles[item.userId]?.associatedEmails.find(
+                (email) => email.OrgId === orgId
+              )?.email ||
+                userProfiles[item.userId]?.associatedEmails[0]?.email ||
+                userProfiles[item.userId]?.email}
+              ]
             </Text>
             {title === "Pending" && (
               <View style={styles.actionButtons}>
@@ -70,6 +85,16 @@ const StatusSection = ({ title, data, onAccept, onReject, userProfiles }) => {
                 </TouchableOpacity>
               </View>
             )}
+            {title === "Members" && User.user._id != item.userId && (
+              <View style={styles.actionButtons}>
+                <TouchableOpacity
+                  style={[styles.iconButton, styles.rejectButton]}
+                  onPress={() => onReject(item)}
+                >
+                  <FontAwesome name="remove" size={24} color="black" />
+                </TouchableOpacity>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
       ))}
@@ -77,8 +102,11 @@ const StatusSection = ({ title, data, onAccept, onReject, userProfiles }) => {
   );
 };
 const ManageNetwork = ({ route }) => {
+  const dispatch = useDispatch();
+
   const navigation = useNavigation();
   const { network, admin } = route.params;
+
   const [TempNetwork, setTempNetwork] = useState(network);
   const [loading, setLoading] = useState(false);
   const [location, setLocation] = useState(null);
@@ -124,6 +152,9 @@ const ManageNetwork = ({ route }) => {
         setLocation("Address not found");
       }
     } catch (error) {
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       console.error("Error fetching address:", error);
       setLocation("Error fetching address");
     } finally {
@@ -153,6 +184,9 @@ const ManageNetwork = ({ route }) => {
 
       setUserProfiles(profiles);
     } catch (error) {
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       console.error("Error fetching user profiles:", error);
     }
   };
@@ -173,6 +207,7 @@ const ManageNetwork = ({ route }) => {
   const formatDate = (dateString) => {
     return format(new Date(dateString), "MMM dd, yyyy h:mm a");
   };
+  console.log(TempNetwork.OnlyProfEmails);
 
   const handleAccept = async (user) => {
     try {
@@ -192,6 +227,9 @@ const ManageNetwork = ({ route }) => {
         setTempNetwork(response.data.network);
       }
     } catch (error) {
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       if (error.response) {
         // Extract error message from the response
         const errorMessage = error.response.data.message || "An error occurred";
@@ -222,6 +260,9 @@ const ManageNetwork = ({ route }) => {
       }
       e;
     } catch (error) {
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       if (error.response) {
         // Extract error message from the response
         const errorMessage = error.response.data.message || "An error occurred";
@@ -261,6 +302,9 @@ const ManageNetwork = ({ route }) => {
                 navigation.navigate("Organizations");
               }
             } catch (error) {
+              if (error.status == 401) {
+                dispatch(logout());
+              }
               if (error.response) {
                 // Extract error message from the response
                 const errorMessage =
@@ -278,17 +322,63 @@ const ManageNetwork = ({ route }) => {
       ]
     );
   };
+  const removeUser = async (user) => {
+    Alert.alert(
+      "Remove User",
+      "Are you sure you want to remove this user from the network?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setLoading(true);
+              const config = {
+                method: "put",
+                url: `${process.env.EXPO_PUBLIC_NETWORK_API}/RemoveUser/${network._id}/${user.userId}`,
+                headers: {
+                  "Accept-Language": "en",
+                  "Content-Type": "application/json",
+                  authorization: `Bearer ${User.Token}`,
+                },
+              };
+              const response = await axios(config);
+              if (response.status === 200) {
+                Alert.alert("Success", "User removed successfully");
+                setTempNetwork(response.data.network);
+              }
+            } catch (error) {
+              const errorMessage =
+                error.response?.data?.message || "An error occurred";
+              Alert.alert("Error", errorMessage);
+            } finally {
+              setLoading(false); // Reset loading state
+            }
+          },
+        },
+      ]
+    );
+  };
   return (
     <ScrollView style={styles.container}>
       <TopBar
         Tabs={tabsAr}
         hasReturnButton={true}
         returnTarget={{ name: "Organizations" }}
-        Title={TempNetwork.name}
+        Title="Network Details"
       />
 
       <View style={styles.header}>
-        <Text style={styles.subtitle}>Created by: {admin.email}</Text>
+        <Text style={styles.title}>{TempNetwork.name}</Text>
+        <Text style={styles.subtitle}>
+          Created by:
+          {
+            admin.associatedEmails.find(
+              (email) => email.OrgId === TempNetwork.orgId
+            )?.email
+          }
+        </Text>
       </View>
 
       <View style={styles.detailsCard}>
@@ -313,21 +403,26 @@ const ManageNetwork = ({ route }) => {
           onAccept={handleAccept}
           onReject={handleReject}
           userProfiles={userProfiles}
+          orgId={TempNetwork.orgId}
         />
         <StatusSection
           title="Members"
           data={TempNetwork.Accepted}
           userProfiles={userProfiles}
+          onReject={removeUser}
+          orgId={TempNetwork.orgId}
         />
         <StatusSection
           title="Rejected"
           data={TempNetwork.Rejected}
           userProfiles={userProfiles}
+          orgId={TempNetwork.orgId}
         />
         <StatusSection
           title="Dismissed"
           data={TempNetwork.Dismissed}
           userProfiles={userProfiles}
+          orgId={TempNetwork.orgId}
         />
       </View>
 

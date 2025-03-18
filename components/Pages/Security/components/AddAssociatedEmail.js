@@ -6,15 +6,17 @@ import {
   StyleSheet,
   Alert,
   TouchableOpacity,
+  ScrollView,
 } from "react-native";
 import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
-import { updateUserData } from "../../../redux/slices/authSlice";
+import { logout, updateUserData } from "../../../redux/slices/authSlice";
 import { COLORS, FONTS } from "../../../../theme";
 import { createStackNavigator } from "@react-navigation/stack";
 import CodeInput from "../../authScreen/components/signupScreens/CodeInput";
 import { useNavigation } from "@react-navigation/native";
 const Stack = createStackNavigator();
+import Ionicons from "@expo/vector-icons/Ionicons";
 
 export default function AddAssociatedEmail() {
   const navigate = useNavigation();
@@ -24,7 +26,9 @@ export default function AddAssociatedEmail() {
   const [loading, setLoading] = useState(false);
   const [otp, setOtp] = useState(null);
   const [isValidEmail, setIsValidEmail] = useState(true);
-
+  const PreviousWorkEmails = User.user.associatedEmails.filter(
+    (email) => email.OrgId === ""
+  );
   const sendOTP = async () => {
     try {
       const response = await axios.post(
@@ -39,6 +43,9 @@ export default function AddAssociatedEmail() {
       Alert.alert("OTP sent successfully");
       return true; // Indicate success
     } catch (error) {
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       const errorMessage = error.response
         ? error.response.data.message || "OTP verification failed"
         : error.message;
@@ -102,7 +109,9 @@ export default function AddAssociatedEmail() {
       }
     } catch (error) {
       console.log(error);
-
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       const errorMessage = error.response
         ? error.response.data.message || "OTP verification failed"
         : error.message;
@@ -147,6 +156,9 @@ export default function AddAssociatedEmail() {
       return true;
     } catch (error) {
       setLoading(false);
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       console.error("Error updating profile:", error);
       Alert.alert(
         "Error",
@@ -196,6 +208,8 @@ export default function AddAssociatedEmail() {
             handleUpdate={moveToSecondScreen}
             setIsValidEmail={setIsValidEmail}
             validateEmail={validateEmail}
+            PreviousWorkEmails={PreviousWorkEmails}
+            User={User}
           />
         )}
       </Stack.Screen>
@@ -220,7 +234,37 @@ const Main = ({
   handleUpdate,
   setIsValidEmail,
   validateEmail,
+  PreviousWorkEmails,
+  User,
 }) => {
+  const dispatch = useDispatch();
+
+  const deleteWorkEmail = async (ID) => {
+    try {
+      const response = await axios.delete(
+        `${process.env.EXPO_PUBLIC_PROFILE_API}/deleteWorkEmail/${User.user._id}`,
+        {
+          headers: {
+            Accept: "application/json",
+            "Accept-Language": "en",
+            "Content-Type": "application/json",
+            authorization: `Bearer ${User.Token}`,
+          },
+          data: { workEmailId: ID },
+        }
+      );
+
+      if (response.status === 200) {
+        dispatch(updateUserData(response.data.user));
+      }
+    } catch (error) {
+      if (error.status == 401) {
+        dispatch(logout());
+      }
+      console.log(error);
+      Alert.alert("Error", error.message);
+    }
+  };
   return (
     <View style={styles.container}>
       <View style={styles.inputsWrapper}>
@@ -235,6 +279,27 @@ const Main = ({
           editable={!loading}
         />
       </View>
+      <ScrollView style={styles.PreviousWorkEmails}>
+        <Text style={styles.Header}>Previous Work Emails</Text>
+        <Text>emails associated with an Organization can not be deleted</Text>
+        {PreviousWorkEmails?.map((email, index) => (
+          <View key={index} style={styles.emailCard}>
+            <Text> {email.email}</Text>
+            <TouchableOpacity
+              onPress={() => {
+                deleteWorkEmail(email._id);
+              }}
+            >
+              <Ionicons
+                name="trash-outline"
+                size={24}
+                color={COLORS.secondary}
+                style={styles.icon}
+              />
+            </TouchableOpacity>
+          </View>
+        ))}
+      </ScrollView>
       <TouchableOpacity
         style={styles.DefaultButton}
         onPress={handleUpdate}
@@ -307,6 +372,29 @@ const styles = StyleSheet.create({
     fontSize: FONTS.medium,
     fontFamily: FONTS.familyBold,
   },
+  PreviousWorkEmails: {
+    marginTop: 20,
+    marginBottom: 20,
+    display: "flex",
+    flexDirection: "column",
+
+    gap: 10,
+    width: "100%",
+    paddingLeft: 20,
+    flex: 2,
+  },
+  emailCard: {
+    borderWidth: 1,
+    borderColor: COLORS.borders,
+    borderRadius: 10,
+    display: "flex",
+    padding: 20,
+    marginTop: 20,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center", // Add this to vertically align the icon and text
+    width: "95%", // Ensure the container takes up full width
+  },
   return: {
     position: "absolute",
     top: 40,
@@ -328,9 +416,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     paddingLeft: 20,
   },
-  inputsWrapper: {
-    flex: 1,
-  },
+
   textWrapper: {
     marginBottom: 20,
     display: "flex",

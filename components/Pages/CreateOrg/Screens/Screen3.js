@@ -55,11 +55,10 @@ const styles = StyleSheet.create({
   },
   textWrapper: {
     marginBottom: 20,
-    marginLeft: 40,
+    marginLeft: 20,
     display: "flex",
     justifyContent: "flex-start",
     alignItems: "flex-start",
-    width: "100%",
     gap: 10,
   },
   signUpPromptBtn: {

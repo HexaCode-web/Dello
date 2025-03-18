@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useContext, useState } from "react";
 import {
   View,
   Text,
@@ -12,7 +12,15 @@ import {
 } from "react-native";
 import TopBar from "../../GeneralComponents/TopBar";
 import Feather from "@expo/vector-icons/Feather";
+import { useSelector } from "react-redux";
+import { SocketContext } from "../../redux/SocketProvider";
+import { useFocusEffect } from "@react-navigation/native";
+import { COLORS } from "../../../theme";
+
 const ChatBot = () => {
+  const User = useSelector((state) => state.auth.user);
+  const socket = useContext(SocketContext);
+
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const tabsAr = [
@@ -24,19 +32,41 @@ const ChatBot = () => {
 
   const handleSend = () => {
     if (newMessage.trim()) {
-      setMessages([
-        ...messages,
-        { id: String(messages.length + 1), text: newMessage, sender: "user" },
-      ]);
+      const messageData = {
+        text: newMessage,
+        role: "user",
+        sender: User.user._id,
+        timestamp: new Date(),
+      };
+      setMessages([...messages, messageData]);
+      if (socket) {
+        socket.emit("SendMessage", messageData);
+      }
       setNewMessage("");
     }
   };
-
+  const handleQuickReply = (reply) => {
+    const messageData = {
+      text: reply,
+      role: "user",
+      sender: User.user._id,
+      timestamp: new Date(),
+    };
+    setMessages([...messages, messageData]);
+    if (socket) {
+      socket.emit("SendMessage", messageData);
+    }
+  };
+  useFocusEffect(
+    useCallback(() => {
+      setMessages(User.user.rAInChat);
+    }, [User])
+  );
   const renderMessage = ({ item }) => (
     <View
       style={[
         styles.messageContainer,
-        item.sender === "user"
+        item.role === "user"
           ? styles.userMessageContainer
           : styles.botMessageContainer,
       ]}
@@ -44,12 +74,12 @@ const ChatBot = () => {
       <View
         style={[
           styles.messageBubble,
-          item.sender === "user" ? styles.userMessage : styles.botMessage,
+          item.role === "user" ? styles.userMessage : styles.botMessage,
         ]}
       >
         <Text
           style={
-            item.sender === "user"
+            item.role === "user"
               ? styles.userMessageText
               : styles.botMessageText
           }
@@ -60,9 +90,14 @@ const ChatBot = () => {
     </View>
   );
 
+  useFocusEffect(
+    useCallback(() => {
+      setMessages(User.user.rAInChat);
+    }, [User])
+  );
   return (
     <SafeAreaView style={styles.container}>
-      <TopBar hasReturnButton={true} Tabs={tabsAr} />
+      <TopBar hasReturnButton={false} Tabs={tabsAr} />
       <FlatList
         data={messages}
         renderItem={renderMessage}
@@ -72,23 +107,42 @@ const ChatBot = () => {
       />
 
       {/* Message Input */}
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.inputContainer}
-      >
-        <View style={styles.inputWrapper}>
-          <TextInput
-            style={styles.input}
-            value={newMessage}
-            onChangeText={setNewMessage}
-            placeholder="Type a message..."
-            placeholderTextColor="#666"
-          />
-          <TouchableOpacity onPress={handleSend} style={styles.sendButton}>
-            <Feather name="send" size={24} color="white" />
+      {messages.length > 0 &&
+      messages[messages.length - 1].role === "AI" &&
+      messages[messages.length - 1].text.includes("Welcome to") ? (
+        <View style={styles.buttonWrapper}>
+          <TouchableOpacity
+            style={styles.quickReplyButton}
+            onPress={() => handleQuickReply("Yes")}
+          >
+            <Text style={styles.quickReplyButtonText}>Yes</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.quickReplyButton}
+            onPress={() => handleQuickReply("No")}
+          >
+            <Text style={styles.quickReplyButtonText}>No</Text>
           </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
+      ) : (
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.inputContainer}
+        >
+          <View style={styles.inputWrapper}>
+            <TextInput
+              style={styles.input}
+              value={newMessage}
+              onChangeText={setNewMessage}
+              placeholder="Type a message..."
+              placeholderTextColor="#666"
+            />
+            <TouchableOpacity onPress={handleSend} style={styles.sendButton}>
+              <Text style={styles.sendButtonIcon}>➤</Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      )}
     </SafeAreaView>
   );
 };
@@ -106,7 +160,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
-
     borderBottomWidth: 1,
     borderBottomColor: "#E5E5E5",
   },
@@ -146,23 +199,22 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   userMessage: {
-    backgroundColor: "#007AFF",
+    backgroundColor: COLORS.secondary,
   },
   botMessage: {
-    backgroundColor: "#F5FCFF",
-
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#E5E5E5",
+    borderColor: COLORS.borders,
   },
   userMessageText: {
     color: "white",
   },
   botMessageText: {
     color: "#333",
+    fontSize: 16,
   },
   inputContainer: {
     backgroundColor: "#F5FCFF",
-
     borderTopWidth: 1,
     borderTopColor: "#E5E5E5",
     padding: 16,
@@ -182,12 +234,34 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   sendButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: COLORS.secondary,
     width: 40,
     height: 40,
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
+  },
+  sendButtonIcon: {
+    fontSize: 20,
+    color: "white",
+  },
+  buttonWrapper: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    padding: 16,
+    backgroundColor: "#F5FCFF",
+    borderTopWidth: 1,
+    borderTopColor: "#E5E5E5",
+  },
+  quickReplyButton: {
+    backgroundColor: COLORS.secondary,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  quickReplyButtonText: {
+    color: "white",
+    fontSize: 16,
   },
 });
 

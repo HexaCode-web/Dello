@@ -3,9 +3,12 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigation } from "@react-navigation/native";
 import { FONTS } from "../../../../theme";
+import { useDispatch } from "react-redux";
+import { logout } from "../../../redux/slices/authSlice";
 
 const NetworkItem = ({ item, setActivePage }) => {
   const navigation = useNavigation();
+  const dispatch = useDispatch();
 
   const [admin, setAdmin] = useState(null);
 
@@ -16,6 +19,9 @@ const NetworkItem = ({ item, setActivePage }) => {
       );
       setAdmin(response.data);
     } catch (error) {
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       console.error("Error fetching admin profile:", error.message);
     }
   };
@@ -84,7 +90,7 @@ const NetworkItem = ({ item, setActivePage }) => {
           Admin Email:
           {
             admin.associatedEmails.find((email) => email.OrgId === item.orgId)
-              .email
+              ?.email
           }
         </Text>
       ) : (

@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useContext,
+} from "react";
 import {
   View,
   Text,
@@ -12,9 +18,11 @@ import {
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { COLORS, FONTS } from "../../../../theme";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import axios from "axios";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { logout } from "../../../redux/slices/authSlice";
+import { SocketContext } from "../../../redux/SocketProvider";
 
 const Body = () => {
   const navigation = useNavigation();
@@ -22,9 +30,8 @@ const Body = () => {
   const [showNetworkDropdown, setShowNetworkDropdown] = useState(false);
   const [selectedNetwork, setSelectedNetwork] = useState(null);
   const [networkDetails, setNetworkDetails] = useState([]);
-  const [intros, setIntros] = useState([]);
   const [meetRequests, setMeetRequests] = useState([]);
-  const [meetRequestsUsers, setMeetRequestsUsers] = useState([]);
+  const [usersMet, setUsersMet] = useState([]);
   const [availableUsers, setAvailableUsers] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -32,11 +39,14 @@ const Body = () => {
   const [error, setError] = useState(null);
   const [members, setMembers] = useState([]);
   const { location } = useSelector((state) => state.location);
-  console.log(meetRequestsUsers);
+  const hasRun = useRef(false); // Ref to track if the effect has run
+  const socket = useContext(SocketContext);
 
+  const dispatch = useDispatch();
   const fetchMembers = async () => {
+    setLoading(true);
     setMeetRequests([]);
-    setMeetRequestsUsers([]);
+    setUsersMet([]);
     const memberPromises = selectedNetwork.Accepted.map(async (member) => {
       const userResponse = await axios.get(
         `${process.env.EXPO_PUBLIC_PROFILE_API}/${member.userId}`,
@@ -58,11 +68,12 @@ const Body = () => {
 
     // Save members to state
     setMembers((prevMembers) => [...prevMembers, ...members]);
+    setLoading(false);
   };
   const fetchNetworkDetails = async () => {
-    setLoading(true);
+    // setLoading(true);
     setError(null);
-    setSelectedNetwork(null);
+    // setSelectedNetwork(null);
     try {
       if (
         !User?.user?.joinedNetworks ||
@@ -89,30 +100,34 @@ const Body = () => {
       );
 
       updateAvailableUsers(proximityNetworks, networkDetails.length);
-
       // Stable sort by distance, then by a secondary key (e.g., network name or ID)
       const sortedNetworks = proximityNetworks.sort((a, b) => {
         if (a.distance === b.distance) {
-          // Use a secondary key to ensure stable sorting
-          return a.name.localeCompare(b.name); // Sort by name if distance is the same
+          return a.name.localeCompare(b.name);
         }
         return a.distance - b.distance; // Sort by distance
       });
-
-      setNetworkDetails(sortedNetworks);
-
-      if (sortedNetworks.length > 0) {
-        const networkToSelect = sortedNetworks[0];
-        setSelectedNetwork(networkToSelect);
-      } else {
-        setSelectedNetwork(null);
+      if (networkDetails.length > 0 && hasRun.current) {
+        setSelectedNetwork(
+          sortedNetworks.find((network) => network._id === selectedNetwork._id)
+        );
       }
+      setNetworkDetails(sortedNetworks.filter((network) => !network.Deleted));
     } catch (error) {
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       handleError(error);
     } finally {
       setLoading(false);
     }
   };
+  useEffect(() => {
+    if (networkDetails.length > 0 && !hasRun.current) {
+      hasRun.current = true; // Mark the effect as run
+      setSelectedNetwork(networkDetails[0]);
+    }
+  }, [networkDetails]);
   const fetchAllNetworkDetails = async (networks, coords) => {
     const networkPromises = networks.map(async (network) => {
       try {
@@ -150,10 +165,12 @@ const Body = () => {
           ...networkResponse.data,
         };
       } catch (networkError) {
-        console.log(
-          `Error fetching network ${network.networkId}:`,
-          networkError
-        );
+        if (networkError.status != 404) {
+          console.log(
+            `Error fetching network ${network.networkId}:`,
+            networkError
+          );
+        }
         return null;
       }
     });
@@ -164,7 +181,7 @@ const Body = () => {
 
   const fetchNetwork = async (networkId) => {
     return await axios.get(
-      `${process.env.EXPO_PUBLIC_NETWORK_API}/getNetwork/${networkId}`,
+      `${process.env.EXPO_PUBLIC_NETWORK_API}/getNetwork/${networkId}/${User.user._id}`,
       {
         headers: { "Content-Type": "application/json" },
       }
@@ -190,7 +207,7 @@ const Body = () => {
       if (network.Accepted && network.Accepted.length > 0) {
         network.Accepted.forEach((user) => {
           // Assuming each user object has a unique `_id` property
-          if (user.userId) {
+          if (user.userId && user.Active && user.ManualInActive === false) {
             uniqueUserIds.add(user.userId);
           }
         });
@@ -212,14 +229,20 @@ const Body = () => {
         "Failed to fetch network details"
     );
   };
-  const fetchMeetRequestsForUser = async (userIDB, networkID) => {
+  const fetchMeetRequestsForUser = async (userIDB, networkID, type = "all") => {
     try {
       // Validate inputs
       if (!userIDB || !networkID) {
         throw new Error("Please provide valid userIDB and networkID");
       }
 
-      const apiUrl = `${process.env.EXPO_PUBLIC_MEET_API}/getMeetRequestForUser/${userIDB}/${networkID}`;
+      // Determine the API endpoint based on the type
+      const endpoint =
+        type === "accepted"
+          ? "getAcceptedMeetRequestForUser"
+          : "getMeetRequestForUser";
+
+      const apiUrl = `${process.env.EXPO_PUBLIC_MEET_API}/${endpoint}/${userIDB}/${networkID}`;
 
       const response = await axios.get(apiUrl, {
         headers: {
@@ -227,10 +250,13 @@ const Body = () => {
           "Content-Type": "application/json",
         },
       });
-
       // Return the data from the response
+
       return response.data;
     } catch (error) {
+      if (error.status == 401) {
+        dispatch(logout());
+      }
       console.error("Error fetching meeting requests:", error);
 
       // Handle errors appropriately
@@ -253,29 +279,104 @@ const Body = () => {
   useEffect(() => {
     fetchMembers();
   }, [selectedNetwork]);
+  const fetchData = async () => {
+    try {
+      // Fetch accepted meet requests
+      const metUsers = await fetchMeetRequestsForUser(
+        User.user._id,
+        selectedNetwork._id,
+        "accepted"
+      );
+
+      // Fetch all meet requests
+      const requests = await fetchMeetRequestsForUser(
+        User.user._id,
+        selectedNetwork._id
+      );
+
+      // Initialize variables
+      let usersMet = [];
+      let meetRequests = [];
+
+      // Extract user IDs from metUsers (accepted requests)
+      if (metUsers.data) {
+        const userIDAs = metUsers.data
+          .map((item) => {
+            if (item.userIDA === User.user._id) {
+              return {
+                userId: item.userIDB,
+                meetingID: item._id,
+                Conversation: item.Conversation,
+                meetRequest: item,
+              }; // Include meetingID
+            } else if (item.userIDB === User.user._id) {
+              return {
+                userId: item.userIDA,
+                meetingID: item._id,
+                Conversation: item.Conversation,
+                meetRequest: item,
+              };
+            } else {
+              return null;
+            }
+          })
+          .filter((item) => item !== null); // Remove null values
+
+        // Filter members to find users met and add meetingID
+        usersMet = members
+          .filter((user) =>
+            userIDAs.some((item) => item.userId === user.userId)
+          )
+          .map((user) => {
+            const meetingInfo = userIDAs.find(
+              (item) => item.userId === user.userId
+            );
+
+            return {
+              ...user,
+              meetingID: meetingInfo.meetingID,
+              meetRequest: meetingInfo.meetRequest,
+              conversation: meetingInfo.Conversation,
+            }; // Add meetingID to the user object
+          });
+      }
+
+      // Update usersMet state
+      setUsersMet(usersMet);
+
+      // Extract user IDs from requests (all requests)
+      if (requests.data) {
+        const meetRequestUsers = requests.data
+          .map((item) => {
+            if (item.userIDA === User.user._id) {
+              return item.userIDB;
+            } else if (item.userIDB === User.user._id) {
+              return item.userIDA;
+            } else {
+              return null;
+            }
+          })
+          .filter((id) => id !== null); // Remove null values
+
+        // Filter members to find users with meet requests
+        meetRequests = members.filter((user) =>
+          meetRequestUsers.includes(user.userId)
+        );
+      }
+
+      // Update meetRequests state
+      setMeetRequests(meetRequests);
+    } catch (err) {
+      console.error("Error in fetchData:", err);
+      setError(err.message);
+    }
+  };
   useFocusEffect(
     useCallback(() => {
-      const fetchData = async () => {
-        try {
-          const result = await fetchMeetRequestsForUser(
-            User.user._id,
-            selectedNetwork._id
-          );
-
-          const userIDAs = result.data.map((item) => item.userIDA);
-
-          setMeetRequestsUsers(
-            members.filter((user) => userIDAs.includes(user.userId))
-          );
-          setMeetRequests(result.data);
-        } catch (err) {
-          setError(err.message);
-        }
-      };
-
       fetchData();
-    }, [User, selectedNetwork, members])
+    }, [User, members])
   );
+
   useFocusEffect(
     useCallback(() => {
       fetchNetworkDetails();
@@ -283,14 +384,21 @@ const Body = () => {
   );
 
   const tabData = [
-    { id: "2", title: "Meet", Count: meetRequests?.length },
-    { id: "3", title: "Intros", Count: 0 },
+    {
+      id: "2",
+      title: "Meet",
+      Count: Math.max(0, usersMet?.length),
+    },
+    { id: "3", title: "Intros", Count: Math.max(0, meetRequests?.length) },
     {
       id: "1",
       title: "All",
-      Count: selectedNetwork?.Accepted.filter(
-        (user) => user.Active === true && user.ManualInActive === false
-      ).length,
+      Count: Math.max(
+        0,
+        selectedNetwork?.Accepted.filter(
+          (user) => user.Active === true && user.ManualInActive === false
+        ).length - 1
+      ),
     },
   ];
   function calculateDistance(lat1, lng1, lat2, lng2) {
@@ -309,7 +417,9 @@ const Body = () => {
 
     return R * c; // Distance in meters
   }
-  const renderMeetingItem = ({ item }) => {
+  const renderMemberItem = async ({ item }) => {
+    const photoUrl = `${process.env.EXPO_PUBLIC_SERVER_URL}/uploads/${item.userId}.jpeg`;
+    const isValidImage = await checkImage(photoUrl);
     if (
       activeTab !== "Meet" &&
       (item.ManualInActive || !item.Active || item.userId === User.user._id)
@@ -323,12 +433,17 @@ const Body = () => {
           navigation.navigate("ViewProfile", {
             ProfileID: item.userId,
             networkId: selectedNetwork.networkId,
-            meetRequest: true,
+            meetRequest: item.meetRequest,
+            meetRequestID: item.meetingID,
           });
         }}
       >
         <Image
-          source={{ uri: "https://via.placeholder.com/50" }}
+          source={
+            isValidImage
+              ? { uri: photoUrl, cache: "reload" }
+              : require("../../../../assets/user.png")
+          }
           style={styles.avatar}
         />
         <View style={styles.meetingInfo}>
@@ -348,8 +463,132 @@ const Body = () => {
       </TouchableOpacity>
     );
   };
+  useEffect(() => {
+    if (socket) {
+      socket.on("newNotification", async (data) => {
+        if (data.type === "Message") {
+          const newMessage = data.metadata;
+
+          setUsersMet((prevUsersMet) =>
+            prevUsersMet.map((user) => {
+              if (user.meetingID === newMessage.requestId) {
+                return {
+                  ...user,
+                  conversation: [
+                    ...user.conversation,
+                    {
+                      message: newMessage.message,
+                      senderID: newMessage.senderID,
+                      timestamp: new Date(),
+                      seen: newMessage.seen,
+                    },
+                  ],
+                };
+              }
+              return user;
+            })
+          );
+        }
+      });
+      // Cleanup the event listener when the component unmounts
+      return () => {
+        socket.off("newNotification");
+      };
+    }
+  }, [socket]);
+  const checkImage = async (photoUrl) => {
+    try {
+      await axios.head(photoUrl);
+      return true;
+    } catch (err) {
+      return false;
+    }
+  };
+
+  const renderMeetingItem = async ({ item }) => {
+    const photoUrl = `${process.env.EXPO_PUBLIC_SERVER_URL}/uploads/${item.userId}.jpeg`;
+    const isValidImage = await checkImage(photoUrl);
+
+    let isUserActive = true;
+    if (activeTab !== "Meet" && item.userId === User.user._id) {
+      return null;
+    }
+    if (!item.Active && item.ManualInActive === false) {
+      isUserActive = false;
+    }
+
+    const unreadCount = item.conversation.filter(
+      (message) => message.seen === false && message.senderID != User.user._id
+    ).length;
+
+    return (
+      <TouchableOpacity
+        style={styles.meetingItem}
+        onPress={() => {
+          navigation.navigate("chatRoom", {
+            ProfileID: item.userId,
+            roomName: `${item.FirstName} ${item.LastName}`,
+            networkId: selectedNetwork.networkId,
+            meetRequest: item.meetRequest,
+            meetRequestID: item.meetingID,
+          });
+        }}
+      >
+        <View>
+          <Image
+            source={
+              isValidImage
+                ? { uri: photoUrl, cache: "reload" }
+                : require("../../../../assets/user.png")
+            }
+            style={styles.avatar}
+          />
+          {isUserActive && <View style={styles.activeIcon}></View>}
+        </View>
+        <View style={styles.meetingInfo}>
+          <Text style={styles.name}>
+            {item.FirstName} {item.LastName}
+          </Text>
+          <Text style={styles.role}>
+            {item.presentRole.Position}{" "}
+            <Image
+              source={require("../../../../assets/sperator.png")}
+              style={styles.sperator}
+            />{" "}
+            {item.presentRole.Company}
+          </Text>
+          <Text style={styles.lastMessage}>
+            {item.conversation[item.conversation.length - 1]?.senderID ===
+            User.user._id
+              ? "You: "
+              : item.conversation[item.conversation.length - 1]?.senderID ===
+                undefined
+              ? ""
+              : `${item.FirstName} ${item.LastName}: `}
+            {item.conversation[item.conversation.length - 1]?.message}
+          </Text>
+          {unreadCount > 0 && (
+            <View style={styles.unSeenCountContainer}>
+              <Text style={styles.unSeenCount}>{unreadCount}</Text>
+            </View>
+          )}
+        </View>
+        {item.time && <Text style={styles.time}>{item.time}</Text>}
+      </TouchableOpacity>
+    );
+  };
 
   const renderNetworkItem = ({ item }) => {
+    const userIsInvisible = item.Accepted.find(
+      (user) => user.userId === User.user._id
+    )?.ManualInActive;
+
+    const activeUsers =
+      item.Accepted.filter(
+        (user) => user.Active === true && user.ManualInActive === false
+      ).length - (userIsInvisible ? 0 : 1);
+
+    if (item.Deleted) return;
     return (
       <TouchableOpacity
         style={styles.networkItem}
@@ -359,9 +598,7 @@ const Body = () => {
         }}
       >
         <Text style={styles.networkName}>
-          <Text style={{ color: "darkgray" }}>
-            {selectedNetwork.OrgDetails.name}
-          </Text>{" "}
+          <Text style={{ color: "darkgray" }}>{item?.OrgDetails.name}</Text>{" "}
           <Image
             source={require("../../../../assets/sperator.png")}
             style={styles.sperator}
@@ -371,7 +608,7 @@ const Body = () => {
             source={require("../../../../assets/sperator.png")}
             style={styles.sperator}
           />{" "}
-          {item.Accepted.length - 1}
+          {Math.max(0, activeUsers)}
         </Text>
       </TouchableOpacity>
     );
@@ -384,7 +621,6 @@ const Body = () => {
       </View>
     );
   }
-
   return (
     <View style={styles.container}>
       <View style={styles.availableUsersCount}>
@@ -468,9 +704,9 @@ const Body = () => {
 
       {members.length > 1 ? (
         <>
-          {activeTab === "Meet" && meetRequestsUsers && (
+          {activeTab === "Meet" && usersMet && (
             <FlatList
-              data={meetRequestsUsers}
+              data={usersMet}
               renderItem={renderMeetingItem}
               keyExtractor={(item) => item._id}
               refreshControl={
@@ -481,7 +717,7 @@ const Body = () => {
           {activeTab === "All" && (
             <FlatList
               data={members}
-              renderItem={renderMeetingItem}
+              renderItem={renderMemberItem}
               keyExtractor={(item) => item._id}
               refreshControl={
                 <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -490,8 +726,8 @@ const Body = () => {
           )}
           {activeTab === "Intros" && (
             <FlatList
-              data={intros}
-              renderItem={renderMeetingItem}
+              data={meetRequests}
+              renderItem={renderMemberItem}
               keyExtractor={(item) => item._id}
               refreshControl={
                 <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -501,9 +737,7 @@ const Body = () => {
         </>
       ) : (
         selectedNetwork && (
-          <Text style={styles.Result}>
-            no members in this network other than you
-          </Text>
+          <Text style={styles.Result}>No members in this network.</Text>
         )
       )}
     </View>
@@ -538,6 +772,40 @@ const styles = StyleSheet.create({
     fontSize: FONTS.medium,
     textAlign: "center",
     color: "white",
+  },
+  lastMessage: {
+    marginTop: 10,
+    fontSize: FONTS.small,
+    color: "#666",
+    maxHeight: 30,
+    maxWidth: "90%",
+  },
+  activeIcon: {
+    position: "absolute",
+    right: 10,
+    bottom: 0,
+    width: 10,
+    height: 10,
+    backgroundColor: "green",
+    borderRadius: 5,
+  },
+  unSeenCountContainer: {
+    position: "absolute",
+    right: 0,
+    bottom: 0,
+    width: 15,
+    height: 15,
+    borderRadius: 10,
+    backgroundColor: COLORS.secondary,
+    display: "flex",
+    justifyContent: "center",
+    alignContent: "center",
+    zIndex: 1,
+  },
+  unSeenCount: {
+    color: "white",
+    textAlign: "center",
+    fontSize: 10,
   },
   loadingContainer: {
     flex: 1,
@@ -585,6 +853,7 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.familyBold,
   },
   meetingItem: {
+    maxHeight: 100,
     flexDirection: "row",
     alignItems: "center",
     padding: 16,

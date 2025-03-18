@@ -18,7 +18,6 @@ import { useFocusEffect } from "@react-navigation/native";
 import ImmediateNeeds from "./components/ImmediateNeeds";
 import { createStackNavigator } from "@react-navigation/stack";
 import { useNavigation } from "@react-navigation/native";
-import ChangeName from "./components/ChangeName";
 import SettingSection from "../../GeneralComponents/SettingSection";
 import TopBar from "../../GeneralComponents/TopBar";
 const settingsStack = createStackNavigator();
@@ -54,7 +53,15 @@ export default function Settings() {
         headerShown: true,
         headerStyle: styles.return,
         header: () => (
-          <TopBar returnTarget={{ name: "Profile" }} hasReturnButton={true} />
+          <TopBar
+            returnTarget={{ name: "Profile" }}
+            hasReturnButton={true}
+            Tabs={[
+              { Name: "Security", Page: "Security" },
+              { Name: "Profile", Page: "Profile" },
+              { Name: "Organisation", Page: "Organizations" },
+            ]}
+          />
         ),
         cardStyle: styles.container,
       }}
