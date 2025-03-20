@@ -3,14 +3,13 @@ import io from "socket.io-client";
 import { updateUserData } from "./slices/authSlice";
 import { useDispatch } from "react-redux";
 import * as Notifications from "expo-notifications";
+import { Alert } from "react-native";
 
 const SOCKET_URL = process.env.EXPO_PUBLIC_SERVER_URL;
 export const SocketContext = createContext(null);
 
 export const SocketProvider = ({ children, userId }) => {
   const [socket, setSocket] = useState(null);
-  const { location } = useSelector((state) => state.location);
-  const User = useSelector((state) => state.auth.user);
 
   const dispatch = useDispatch();
 
@@ -34,7 +33,9 @@ export const SocketProvider = ({ children, userId }) => {
       console.log("✅ Socket connected:", userId);
       newSocket.emit("registerUser", userId);
     });
-
+    newSocket.on("AI-connection-error", () => {
+      Alert.alert("Error", "Couldn't connect to the Ai Server");
+    });
     newSocket.on("newNotification", async (data) => {
       await Notifications.scheduleNotificationAsync({
         content: {
@@ -48,10 +49,6 @@ export const SocketProvider = ({ children, userId }) => {
 
     newSocket.on("NetworkJoin", (data) => {
       dispatch(updateUserData(data.user));
-    });
-
-    newSocket.on("receiveBotMessage", (data) => {
-      dispatch(updateUserData(data));
     });
 
     newSocket.on("connect_error", (err) => {

@@ -1,4 +1,3 @@
-import { useSelector } from "react-redux";
 import React, { useState } from "react";
 import { View, StyleSheet } from "react-native";
 import TopBar from "../../GeneralComponents/TopBar";

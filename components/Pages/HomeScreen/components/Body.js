@@ -929,5 +929,4 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
 });
-
 export default Body;

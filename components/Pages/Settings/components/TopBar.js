@@ -4,7 +4,7 @@ import react from "react";
 import HamburgerButton from "../../HomeScreen/components/HamburgerButton";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { COLORS, FONTS } from "../../../../theme";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { logout } from "../../../redux/slices/authSlice";
 
 export default function TopBar({ title, returnTarget }) {
