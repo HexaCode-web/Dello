@@ -53,11 +53,9 @@ const ChatBot = () => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const [counter, setCounter] = useState(0);
   const [selectedNetwork, setSelectedNetwork] = useState(null);
   const [showNetworkDropdown, setShowNetworkDropdown] = useState(false);
   const [networkDetails, setNetworkDetails] = useState([]);
-  const [availableUsers, setAvailableUsers] = useState(0);
   const flatListRef = useRef(null);
   const hasRun = useRef(false); // Ref to track if the effect has run
 
@@ -162,12 +160,6 @@ const ChatBot = () => {
         });
       }
     });
-
-    // Calculate the total number of unique users
-    const totalAvailableUsers = uniqueUserIds.size;
-
-    // Update the available users, ensuring it doesn't go below 0
-    setAvailableUsers(Math.max(0, totalAvailableUsers - 1));
   };
 
   const handleError = (error) => {
@@ -228,8 +220,6 @@ const ChatBot = () => {
         dispatch(logout());
       }
       handleError(error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -248,23 +238,6 @@ const ChatBot = () => {
       if (socket) {
         socket.emit("SendMessageToBot", messageData);
         setLoading(true);
-        let interval = setInterval(() => {
-          setCounter((prev) => {
-            if (prev >= 120) {
-              // 120 seconds = 2 minutes
-              clearInterval(interval);
-              setLoading(false);
-              Alert.alert(
-                "Error",
-                "The servers are busy, please try again later"
-              );
-              return 0; // Stop at 120
-            }
-            return prev + 1;
-          });
-        }, 1000); // Increment every second
-
-        return () => clearInterval(interval);
       }
     }
   };
@@ -275,7 +248,7 @@ const ChatBot = () => {
         user.ManualInActive === false &&
         user.userId !== User.user._id
     );
-
+    if (activeUsers.length == 0) return;
     const UserIDs = activeUsers.map((user) => user.userId);
 
     try {
@@ -298,30 +271,17 @@ const ChatBot = () => {
         return profileData;
       });
 
-      console.log(profiles);
-
       if (socket) {
         socket.emit("GenerateMatches", {
           Profiles: profiles,
           User: { ...User.user, rAInChat: [] },
         });
-        setLoading(true);
-        let interval = setInterval(() => {
-          setCounter((prev) => {
-            if (prev >= 120) {
-              clearInterval(interval);
-              setLoading(false);
-              Alert.alert(
-                "Error",
-                "The servers are busy, please try again later"
-              );
-              return 0;
-            }
-            return prev + 1;
-          });
-        }, 1000);
+        console.log({
+          Profiles: profiles,
+          User: { ...User.user, rAInChat: [] },
+        });
 
-        return () => clearInterval(interval);
+        setLoading(true);
       }
     } catch (error) {
       if (error.response && error.response.status === 401) {
@@ -343,19 +303,6 @@ const ChatBot = () => {
     if (socket) {
       socket.emit("SendMessageToBot", messageData);
       setLoading(true);
-      let interval = setInterval(() => {
-        setCounter((prev) => {
-          if (prev >= 120) {
-            clearInterval(interval);
-            setLoading(false);
-            Alert.alert("Error", "Loading is taking too long!");
-            return 0;
-          }
-          return prev + 1;
-        });
-      }, 1000);
-
-      return () => clearInterval(interval);
     }
   };
 
@@ -440,16 +387,6 @@ const ChatBot = () => {
     }, [location])
   );
 
-  // Scroll to bottom when messages change
-  useEffect(() => {
-    if (flatListRef.current && messages.length > 0) {
-      // Adding a small delay can help ensure the FlatList has rendered
-      setTimeout(() => {
-        flatListRef.current.scrollToEnd({ animated: true });
-      }, 200);
-    }
-  }, [messages]);
-
   // Scroll to bottom when screen comes into focus
   useFocusEffect(
     useCallback(() => {
@@ -471,11 +408,44 @@ const ChatBot = () => {
   );
 
   // =============== SOCKET LISTENERS ===============
-  socket.on("receiveBotMessage", (data) => {
-    setLoading(false);
-    dispatch(updateUserData(data));
-  });
 
+  useEffect(() => {
+    socket.on("receiveBotMessage", (data) => {
+      setLoading(false);
+      dispatch(updateUserData(data));
+    });
+    socket.on("awaiting_AI_response", () => {
+      setLoading(true);
+    });
+    socket.on("matchmaking_started", () => {
+      console.log("🟡 Matchmaking started...");
+      setLoading(true);
+    });
+
+    socket.on("matchmaking_complete", (data) => {
+      console.log("✅ Matchmaking complete:", data);
+      setLoading(false);
+    });
+
+    socket.on("matchmaking_error", (error) => {
+      console.log("❌ Matchmaking error:", error);
+      setLoading(false);
+    });
+
+    socket.on("matchMakingTimeout", () => {
+      console.log("⏳ Matchmaking timeout...");
+      setLoading(false);
+    });
+
+    return () => {
+      socket.off("receiveBotMessage");
+      socket.off("awaiting_AI_response");
+      socket.off("matchmaking_started");
+      socket.off("matchmaking_complete");
+      socket.off("matchmaking_error");
+      socket.off("matchMakingTimeout");
+    };
+  }, []);
   // =============== RENDER ===============
   return (
     <SafeAreaView style={styles.container}>
@@ -496,16 +466,13 @@ const ChatBot = () => {
         }}
       />
 
-      {loading ? (
-        <ActivityIndicator size="large" color={COLORS.secondary} />
-      ) : (
-        <TouchableOpacity
-          style={styles.hallowButton}
-          onPress={() => setShowNetworkDropdown(true)}
-        >
-          <Text style={styles.hallowButtonText}>Smart Suggestions</Text>
-        </TouchableOpacity>
-      )}
+      <TouchableOpacity
+        style={styles.hallowButton}
+        onPress={() => setShowNetworkDropdown(true)}
+        disabled={loading}
+      >
+        <Text style={styles.hallowButtonText}>Smart Suggestions</Text>
+      </TouchableOpacity>
 
       {/* Quick Reply Buttons or Input Container */}
       {messages.length > 0 &&
@@ -536,6 +503,7 @@ const ChatBot = () => {
             onChangeText={setNewMessage}
             placeholder="Type a message..."
             placeholderTextColor="#666"
+            editable={!loading}
           />
           {loading ? (
             <ActivityIndicator size="large" color={COLORS.secondary} />

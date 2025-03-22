@@ -8,7 +8,7 @@ export default function App() {
   useEffect(() => {
     SystemUI.setBackgroundColorAsync("#000000"); // Set to your preferred color
   }, []);
-
+  console.log(process.env);
   return (
     <Provider store={store}>
       <Home />

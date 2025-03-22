@@ -45,7 +45,8 @@
     "expo-image-picker": "~16.0.6"
   },
   "devDependencies": {
-    "@babel/core": "^7.26.0"
+    "@babel/core": "^7.26.0",
+    "@react-native-community/cli": "latest"
   },
   "private": true
 }

@@ -8,7 +8,6 @@ import {
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import AntDesign from "@expo/vector-icons/AntDesign";
-import { useGetLocation } from "../../../hooks/getLocation";
 import { useDispatch, useSelector } from "react-redux";
 import { login } from "../../../redux/slices/authSlice";
 import { COLORS, FONTS } from "../../../../theme";

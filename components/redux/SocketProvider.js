@@ -4,6 +4,7 @@ import { updateUserData } from "./slices/authSlice";
 import { useDispatch } from "react-redux";
 import * as Notifications from "expo-notifications";
 import { Alert } from "react-native";
+console.log(process.env.EXPO_PUBLIC_SERVER_URL);
 
 const SOCKET_URL = process.env.EXPO_PUBLIC_SERVER_URL;
 export const SocketContext = createContext(null);
@@ -33,9 +34,7 @@ export const SocketProvider = ({ children, userId }) => {
       console.log("✅ Socket connected:", userId);
       newSocket.emit("registerUser", userId);
     });
-    newSocket.on("AI-connection-error", () => {
-      Alert.alert("Error", "Couldn't connect to the Ai Server");
-    });
+
     newSocket.on("newNotification", async (data) => {
       await Notifications.scheduleNotificationAsync({
         content: {
