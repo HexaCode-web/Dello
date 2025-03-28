@@ -19,6 +19,7 @@ import {
   Alert,
   Modal,
   Image,
+  ScrollView,
 } from "react-native";
 import TopBar from "../../GeneralComponents/TopBar";
 import { useDispatch, useSelector } from "react-redux";
@@ -28,6 +29,7 @@ import { COLORS, FONTS } from "../../../theme";
 import { updateUserData } from "../../redux/slices/authSlice";
 import { Feather } from "@expo/vector-icons";
 import axios from "axios";
+import Matches from "./Matches";
 
 // =============== UTILITY FUNCTIONS ===============
 const calculateDistance = (lat1, lng1, lat2, lng2) => {
@@ -56,6 +58,21 @@ const ChatBot = () => {
   const [selectedNetwork, setSelectedNetwork] = useState(null);
   const [showNetworkDropdown, setShowNetworkDropdown] = useState(false);
   const [networkDetails, setNetworkDetails] = useState([]);
+  const [matchmakingStatus, setMatchmakingStatus] = useState("");
+  const [matches, setMatches] = useState([
+    {
+      profile: {
+        id: "677d6d6573cdbb404f1e3397",
+        name: "Marco Khairy",
+        role: "Web Developer",
+        company: "TechHub",
+      },
+      score: "60.22%",
+      networkID: "67acd2ea693ad20359d276f6",
+      reasoning:
+        "Okay, let's analyze these two professionals and determine why they might be a good match for networking and collaboration. **Analysis of the Professionals** * **John Doe (Software Engineer):** A focused, technically-oriented professional. He’s actively seeking guidance and mentorship to accelerate his career growth. He’s likely comfortable with technical discussions and seeking advice. * **Marco Khairy (Web Developer):** A more focused on the front-end and visual aspects of web development. He’s showcasing a strong skillset with React.js, suggesting a potential interest in the underlying technologies and architecture. **Similarity Score: 0.60** – This suggests a moderate level of overlap in their areas of expertise, but not a deep connection. They’re both in the tech space, but John is more focused on the technical side, while Marco is more focused on the user experience. **Why They Might Be a Good Match – Reasons for Connection & Collaboration** Here are 2-3 specific reasons why they should connect, based on complementary skills and potential opportunities: 1. **Shared Interest in Modern Web Development Trends:** Marco’s expertise in React.js aligns with John’s likely focus on modern web development practices. John might be looking for Marco to share insights into the latest trends in JavaScript frameworks or UI/UX design. Marco could offer a perspective on how to leverage React.js effectively for scalability and performance. 2. **Mentorship Potential – Focused on Technical Depth:** John is explicitly seeking a mentor for career growth. Marco, with his strong React.js skills, could be a natural mentor for John. He could offer guidance on best practices, architectural decisions, and potential pitfalls in React.js development. This could be a very valuable, mutually beneficial relationship. 3. **Potential for Cross-Pollination of Ideas:** John's experience with software engineering principles could be valuable to Marco, who is deeply involved in the user experience. Marco could offer insights into user-centered design and how to translate those insights into effective web layouts and interactions. This cross-pollination could lead to more innovative solutions. **To further refine this analysis, we'd need more context, such as:** * **Their specific roles within companies:** Knowing the industry and company size would help understand the potential for collaboration. * **The specific areas of focus for John's mentorship:** What kind of guidance is he looking for? Let me know if you'd like me to explore any of these reasons in more detail or consider other potential connections!",
+    },
+  ]);
   const flatListRef = useRef(null);
   const hasRun = useRef(false); // Ref to track if the effect has run
 
@@ -179,7 +196,7 @@ const ChatBot = () => {
         User.user.joinedNetworks.length === 0
       ) {
         setNetworkDetails([]);
-        Alert.alert("Error", "No networks found");
+
         return;
       }
 
@@ -275,10 +292,7 @@ const ChatBot = () => {
         socket.emit("GenerateMatches", {
           Profiles: profiles,
           User: { ...User.user, rAInChat: [] },
-        });
-        console.log({
-          Profiles: profiles,
-          User: { ...User.user, rAInChat: [] },
+          selectedNetwork: selectedNetwork,
         });
 
         setLoading(true);
@@ -421,9 +435,15 @@ const ChatBot = () => {
       console.log("🟡 Matchmaking started...");
       setLoading(true);
     });
+    socket.on("matchmaking_progress", (Data) => {
+      console.log(Data);
 
+      setMatchmakingStatus(Data.status);
+      setLoading(true);
+    });
     socket.on("matchmaking_complete", (data) => {
       console.log("✅ Matchmaking complete:", data);
+      setMatches(data.matches);
       setLoading(false);
     });
 
@@ -465,13 +485,28 @@ const ChatBot = () => {
           minIndexForVisible: 0,
         }}
       />
+      {matches.length > 0 && (
+        <ScrollView style={styles.matchesContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.matchesTitle}>Your Matches</Text>
 
+            <TouchableOpacity onPress={() => setMatches([])}>
+              <Feather name="x" size={24} color="black" />
+            </TouchableOpacity>
+          </View>
+          {matches.map((match, index) => (
+            <Matches key={index} match={match} />
+          ))}
+        </ScrollView>
+      )}
       <TouchableOpacity
         style={styles.hallowButton}
         onPress={() => setShowNetworkDropdown(true)}
         disabled={loading}
       >
-        <Text style={styles.hallowButtonText}>Smart Suggestions</Text>
+        <Text style={styles.hallowButtonText}>
+          {loading ? matchmakingStatus : "Smart Suggestions"}
+        </Text>
       </TouchableOpacity>
 
       {/* Quick Reply Buttons or Input Container */}
@@ -574,6 +609,10 @@ const styles = StyleSheet.create({
   },
   messagesListContent: {
     paddingVertical: 10,
+  },
+  matchesTitle: {
+    fontSize: FONTS.large,
+    fontWeight: "bold",
   },
   messageContainer: {
     flexDirection: "column",
@@ -736,3 +775,44 @@ const styles = StyleSheet.create({
 });
 
 export default ChatBot;
+/*[
+  {
+    profile: {
+      id: null,
+      name: 'Sarah Hassan',
+      role: 'Cardiologist',
+      company: 'MediClinic'
+    },
+    score: '8.93%',
+    reasoning: "Okay, let's analyze these two professionals and determine why they might be a good match for networking and collaboration. **Analysis of the Professionals** * **John Doe (Software Engineer):** Focuses on technical skills, problem-solving, and career advancement through a technical skillset. He’s actively seeking guidance and mentorship. * **Sarah Hassan (Cardiologist):** Specializes in cardiovascular surgery and patient care. Her expertise likely involves complex medical procedures, data analysis, and a deep 
+understanding of the human body – all areas where technical skills can be valuable. **Similarity Score: 0.09** – This suggests a moderate level of overlap in their areas of interest, but not a strong connection. 
+**Why They Might Be a Good Match – Reasons for Connection** Here are 2-3 specific reasons why these professionals should connect, based on their profiles: 1. **Complementary Skill Set – Data Analysis & Technical 
+Problem Solving:** Sarah's role as a cardiologist likely involves analyzing large datasets (patient records, imaging, etc.) to diagnose and manage cardiovascular conditions. John's expertise in software engineering provides the tools to analyze this data, build models, and potentially contribute to improved patient care. **Collaboration Opportunity:** Sarah could potentially share insights from her data analysis work with John, and John could offer his software engineering skills to help Sarah streamline her data processing 
+or build a more robust analytical tool. 2. **Shared Interest in Innovation & Technology:** Both professions are heavily reliant on technology. Sarah’s work involves complex medical technology, while John’s work involves developing and implementing software solutions. **Collaboration Opportunity:** Sarah could potentially share insights into current trends in cardiovascular technology with John, and John could offer his expertise in software development to help Sarah explore new technologies or improve existing systems. 3. **Mentorship Potential – Career Growth Focus:** John is explicitly seeking a mentor. Sarah, with her experience and knowledge of the medical field, could be an excellent mentor for John, offering insights into navigating the complexities of the industry and potentially providing guidance on career paths. **Collaboration Opportunity:** Sarah could offer a structured mentorship program, leveraging her experience to guide John’s professional development. **To further refine this analysis, more information about their specific projects, interests, and professional goals would be helpful.** --- To help me refine this analysis further, 
+could you tell me: * **What is the context of this connection?** (e.g., LinkedIn, a mutual acquaintance, a specific event?) * **Are there any specific areas of interest they share?** (e.g., AI in healthcare, cybersecurity, specific programming languages?)"
+  },
+  {
+    profile: {
+      id: null,
+      name: 'Marco Khairy',
+      role: 'Web Developer',
+      company: 'TechHub'
+    },
+    score: '64.18%',
+    reasoning: "Okay, let's analyze these two professionals and determine why they might be a good match for networking and collaboration. **Analysis:** * **John Doe (Software Engineer):** He’s focused on career 
+growth and actively seeking mentorship. He’s likely looking for guidance on specific technologies and strategies to advance his skills. * **Marco Khairy (Web Developer):** He possesses a strong skillset in React.js, which aligns well with John’s potential career goals. He also has a focus on development, suggesting a collaborative environment. **Similarity Score: 0.64** – This suggests a decent level of potential connection, but it’s not a high score. It indicates they share some common ground, but there’s still room for deeper engagement. **Why They Might Be a Good Match – 2-3 Reasons:** 1. **Shared Interest in Technology & Growth:** Both professionals are deeply invested in technology and career advancement. John’s seeking mentorship, and Marco’s expertise in React.js suggests a shared interest in staying current with industry trends 
+and developing new skills. They could benefit from discussing best practices, emerging technologies, and strategies for scaling their careers. 2. **Complementary Skill Sets – React.js:** Marco’s expertise in React.js is a significant overlap with John’s role. Connecting them would allow Marco to offer practical advice and insights into a popular framework, while John can benefit from Marco’s understanding of front-end development and potential solutions to his challenges. 3. **Potential for Collaborative Projects/Knowledge Sharing:** Marco could potentially offer John some insights into his React.js projects, or John could share his experience with specific challenges he’s facing. This could lead to a mutually beneficial knowledge exchange, strengthening their professional relationships. **To further strengthen the connection, consider:** * **LinkedIn Connection:** A direct connection on LinkedIn would be a good starting point. * **Mutual Connections:** Exploring mutual connections could facilitate a more personal introduction. * **Informal Chat:** A brief introductory message on LinkedIn or a casual conversation could establish a foundation for further collaboration. --- To give you even more tailored recommendations, could you tell me: * **What kind 
+of collaboration are you envisioning?** (e.g., code reviews, project brainstorming, knowledge sharing, etc.)"
+  },
+  {
+    profile: {
+      id: null,
+      name: 'Ahmed Youssef',
+      role: 'Automotive Engineer',
+      company: 'AutoTech'
+    },
+    score: '23.55%',
+    reasoning: "Okay, let's analyze these two professionals and discuss why they might be a good match for networking and collaboration. **Analysis of the Professionals** * **John Doe (Software Engineer):** A software engineer focused on JavaScript – a highly sought-after skill set in today’s tech landscape. He’s proactively seeking mentorship to accelerate his career growth. * **Ahmed Youssef (Automotive Engineer):** An Automotive Engineer with a strong focus on Vehicle Dynamics. This suggests a potential for collaboration 
+on projects that require a deep understanding of complex systems, potentially involving simulation or modeling. **Similarity Score: 0.24** – This suggests a moderate level of overlap in their areas of expertise, 
+but not a deep connection. It’s a good starting point for exploring potential collaboration. **Why They Might Be a Good Match – 2-3 Reasons** Here are 3 specific reasons why these professionals should connect, based on their profiles: 1. **Shared Interest in Technical Depth & Problem Solving:** Both are deeply involved in technical fields. John’s JavaScript expertise is crucial for building software, while Ahmed’s Vehicle Dynamics knowledge is essential for designing and analyzing vehicle performance. Their work often involves tackling complex problems – and a collaborative approach could help them both refine solutions and share insights. They could discuss best practices for software development, or even collaborate on a small, technical challenge. 2. **Complementary Skill Sets – Simulation & Modeling:** Ahmed’s expertise in Vehicle Dynamics *strongly* aligns with the potential for collaboration with John. Software engineers often need to model and simulate systems (like vehicle performance), and understanding the underlying mechanics is a huge benefit. Connecting them could lead to joint projects, knowledge sharing, or even a mentorship program focused on simulation techniques. 3. **Potential for Cross-Industry Collaboration (Future):** While currently focused on their respective fields, the increasing integration of software into automotive systems (e.g., autonomous driving, advanced driver-assistance systems) creates opportunities for collaboration. John’s software skills could be valuable in helping Ahmed optimize vehicle dynamics simulations, and vice versa. **To further refine this analysis, more information would be helpful, such as:** * **Specific projects they're working on:** What kind of software are they building? What kind of vehicle dynamics are they modeling? * **Their professional organizations/networks:** Are they members of any relevant groups? * **Their communication styles:** Do they seem open to collaboration, or more focused on individual work? Let me know if you'd like me to explore any of these reasons in more detail or consider other potential connections!"  }
+]*/

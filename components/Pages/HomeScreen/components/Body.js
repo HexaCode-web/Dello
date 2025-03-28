@@ -438,14 +438,16 @@ const Body = () => {
           });
         }}
       >
-        <Image
-          source={
-            isValidImage
-              ? { uri: photoUrl, cache: "reload" }
-              : require("../../../../assets/user.png")
-          }
-          style={styles.avatar}
-        />
+        {isValidImage ? (
+          <Image
+            source={{ uri: photoUrl, cache: "reload" }}
+            style={styles.avatar}
+          />
+        ) : (
+          <View style={styles.avatarContainer}>
+            <Text style={styles.avatarText}>{item.FirstName.charAt(0)}</Text>
+          </View>
+        )}
         <View style={styles.meetingInfo}>
           <Text style={styles.name}>
             {item.FirstName} {item.LastName}
@@ -535,14 +537,16 @@ const Body = () => {
         }}
       >
         <View>
-          <Image
-            source={
-              isValidImage
-                ? { uri: photoUrl, cache: "reload" }
-                : require("../../../../assets/user.png")
-            }
-            style={styles.avatar}
-          />
+          {isValidImage ? (
+            <Image
+              source={{ uri: photoUrl, cache: "reload" }}
+              style={styles.avatar}
+            />
+          ) : (
+            <View style={styles.avatarContainer}>
+              <Text style={styles.avatarText}>{item.FirstName.charAt(0)}</Text>
+            </View>
+          )}
           {isUserActive && <View style={styles.activeIcon}></View>}
         </View>
         <View style={styles.meetingInfo}>
@@ -859,6 +863,21 @@ const styles = StyleSheet.create({
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: "#e0e0e0",
+  },
+  avatarContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: COLORS.secondary,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+
+  avatarText: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#FFFFFF",
   },
   avatar: {
     width: 50,

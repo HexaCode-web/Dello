@@ -26,12 +26,8 @@ import { COLORS, FONTS } from "../../../theme";
 import { logout } from "../../redux/slices/authSlice";
 
 export default function ViewProfile({ route }) {
-  const {
-    ProfileID,
-    networkId,
-    meetingRequest = null,
-    meetRequestID,
-  } = route.params;
+  const { ProfileID, networkId, meetRequestID } = route.params;
+
   const dispatch = useDispatch();
   const navigation = useNavigation();
 

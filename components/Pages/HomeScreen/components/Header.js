@@ -18,46 +18,42 @@ export default function Header() {
 
   const [address, setAddress] = useState("");
   const [loading, setLoading] = useState(true);
-
+  const [addressLoaded, setAddressLoaded] = useState(false);
   const fetchAddress = async () => {
     setLoading(true);
-    let latitude = location.coords.latitude;
-    let longitude = location.coords.longitude;
+    const { latitude, longitude } = location.coords;
 
     try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`,
-        {
-          headers: {
-            "User-Agent": "Delllo/1.5 (marcomark5050@gmail.com)", // Replace with your app info
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+      const [osmResponse, firestoreResponse] = await Promise.all([
+        fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`,
+          { headers: { "User-Agent": "Delllo/1.5 (marcomark5050@gmail.com)" } }
+        ),
+        fetch(
+          `https://firestore.googleapis.com/v1/projects/myawesomeapp-1f97d/databases/(default)/documents/Cities/Cities`
+        ),
+      ]);
+      if (!osmResponse.ok || !firestoreResponse.ok) {
+        throw new Error(`API error: OSM=${osmResponse.status}`);
       }
+      const [osmData, firestoreData] = await Promise.all([
+        osmResponse.json(),
+        firestoreResponse.json(),
+      ]);
 
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error("Received non-JSON response");
-      }
+      if (!firestoreResponse.ok)
+        throw new Error(`Firestore error! Status: ${firestoreResponse.status}`);
 
-      const data = await response.json();
-      if (data && data.display_name) {
-        const { city, postcode, road } = data.address;
-        const formattedAddress = `${city}, ${postcode}, ${road}`;
+      const formattedAddress = osmData.display_name
+        ? `${osmData.address.city}, ${osmData.address.postcode}, ${osmData.address.road}`
+        : "Address not found";
 
-        setAddress(formattedAddress); // Excludes postcode
-      } else {
-        setAddress("Address not found");
-      }
+      setAddress(formattedAddress);
+      setAddressLoaded(firestoreData.fields.Data.booleanValue);
     } catch (error) {
-      if (error.status == 401) {
-        dispatch(logout());
-      }
-      console.log("Error fetching address:", error);
-      setAddress("Error fetching address");
+      console.error("Error:", error);
+      setAddress("Error fetching data");
+      if (error.status === 401) dispatch(logout());
     } finally {
       setLoading(false);
     }
@@ -85,7 +81,11 @@ export default function Header() {
         />
       </View>
       <View style={styles.addressContainer}>
-        <Text style={styles.address}>{address}</Text>
+        {addressLoaded ? (
+          <Text style={styles.address}>{address}</Text>
+        ) : (
+          <View style={styles.address}>{address}</View>
+        )}
       </View>
     </View>
   );
